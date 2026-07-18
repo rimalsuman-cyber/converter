@@ -19,7 +19,7 @@
      new version instead of a stale cached copy.
 ========================================================= */
 
-const CACHE_NAME = "unitkit-v2";
+const CACHE_NAME = "unitkit-v3";
 
 // Every file needed to run the app fully offline.
 // Keep this list in sync whenever you add new pages/scripts/icons.
@@ -35,6 +35,9 @@ const APP_SHELL_FILES = [
   "./js/utils/storage.js",
   "./js/modules/distance.js",
   "./js/modules/temperature.js",
+  "./js/modules/weight.js",
+  "./js/modules/calculator.js",
+  "./js/modules/bmi.js",
   "./js/api/currency.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

@@ -37,6 +37,9 @@ export const PAGE_TITLES = {
   "page-distance": "Distance",
   "page-temperature": "Temperature",
   "page-currency": "Currency",
+  "page-weight": "Weight",
+  "page-calculator": "Calculator",
+  "page-bmi": "BMI Calculator",
   "page-settings": "Settings",
   "page-about": "About",
 };

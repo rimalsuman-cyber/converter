@@ -13,6 +13,9 @@
 
 import { kmToMiles, milesToKm } from "./modules/distance.js";
 import { celsiusToFahrenheit, fahrenheitToCelsius } from "./modules/temperature.js";
+import { kgToLbs, lbsToKg } from "./modules/weight.js";
+import { createCalculatorEngine } from "./modules/calculator.js";
+import { calculateBMI, getBMICategory } from "./modules/bmi.js";
 import { getExchangeRate, clearCurrencyCache } from "./api/currency.js";
 import { roundTo, formatRelativeTime } from "./utils/format.js";
 import { $, $$, debounce } from "./utils/dom.js";
@@ -207,7 +210,32 @@ function setupTemperatureConverter() {
   });
 }
 
-/* ---------- 6. CURRENCY CONVERTER ---------- */
+/* ---------- 6. WEIGHT CONVERTER ---------- */
+
+function setupWeightConverter() {
+  const kgInput = document.getElementById("kg-input");
+  const lbsInput = document.getElementById("lbs-input");
+  const swapBtn = document.getElementById("weight-swap-btn");
+  if (!kgInput || !lbsInput || !swapBtn) return;
+
+  kgInput.addEventListener("input", () => {
+    const kg = parseFloat(kgInput.value);
+    lbsInput.value = isNaN(kg) ? "" : roundTo(kgToLbs(kg));
+  });
+
+  lbsInput.addEventListener("input", () => {
+    const lbs = parseFloat(lbsInput.value);
+    kgInput.value = isNaN(lbs) ? "" : roundTo(lbsToKg(lbs));
+  });
+
+  swapBtn.addEventListener("click", () => {
+    kgInput.value = "";
+    lbsInput.value = "";
+    kgInput.focus();
+  });
+}
+
+/* ---------- 7. CURRENCY CONVERTER ---------- */
 
 function setupCurrencyConverter() {
   const amountInput = document.getElementById("currency-amount-input");
@@ -264,7 +292,109 @@ function setupCurrencyConverter() {
   updateResult();
 }
 
-/* ---------- 7. SETTINGS PAGE EXTRAS ---------- */
+/* ---------- 8. CALCULATOR ---------- */
+
+function setupCalculator() {
+  const displayEl = document.getElementById("calculator-display");
+  const calculatorCard = displayEl?.closest(".calculator-card");
+  if (!displayEl || !calculatorCard) return;
+
+  const engine = createCalculatorEngine();
+
+  function render() {
+    displayEl.textContent = engine.getDisplay();
+  }
+
+  // Single delegated listener on the button grid, instead of one
+  // listener per button — less code, and automatically covers any
+  // buttons added to the grid later.
+  calculatorCard.addEventListener("click", (event) => {
+    const button = event.target.closest("button");
+    if (!button) return;
+
+    const { calcDigit, calcOperator, calcAction } = button.dataset;
+
+    if (calcDigit !== undefined) {
+      engine.inputDigit(calcDigit);
+    } else if (calcOperator !== undefined) {
+      engine.setOperator(calcOperator);
+    } else if (calcAction === "decimal") {
+      engine.inputDecimal();
+    } else if (calcAction === "clear") {
+      engine.clear();
+    } else if (calcAction === "toggle-sign") {
+      engine.toggleSign();
+    } else if (calcAction === "percent") {
+      engine.percent();
+    } else if (calcAction === "equals") {
+      engine.equals();
+    }
+
+    render();
+  });
+
+  // Optional physical-keyboard support, active only while this page
+  // is open — lets desktop users type instead of clicking.
+  document.addEventListener("keydown", (event) => {
+    const isCalculatorOpen = document.getElementById("page-calculator")?.classList.contains("active");
+    if (!isCalculatorOpen) return;
+
+    if (event.key >= "0" && event.key <= "9") {
+      engine.inputDigit(event.key);
+    } else if (event.key === ".") {
+      engine.inputDecimal();
+    } else if (event.key === "+" || event.key === "-") {
+      engine.setOperator(event.key);
+    } else if (event.key === "*") {
+      engine.setOperator("×");
+    } else if (event.key === "/") {
+      event.preventDefault(); // avoid triggering the browser's quick-find
+      engine.setOperator("÷");
+    } else if (event.key === "Enter" || event.key === "=") {
+      engine.equals();
+    } else if (event.key === "Backspace") {
+      engine.backspace();
+    } else if (event.key === "Escape") {
+      engine.clear();
+    } else {
+      return; // unrelated key — skip the render below
+    }
+
+    render();
+  });
+
+  render();
+}
+
+/* ---------- 9. BMI CALCULATOR ---------- */
+
+function setupBMICalculator() {
+  const weightInput = document.getElementById("bmi-weight-input");
+  const heightInput = document.getElementById("bmi-height-input");
+  const resultEl = document.getElementById("bmi-result");
+  const categoryEl = document.getElementById("bmi-category");
+  if (!weightInput || !heightInput || !resultEl || !categoryEl) return;
+
+  function updateResult() {
+    const weightKg = parseFloat(weightInput.value);
+    const heightCm = parseFloat(heightInput.value);
+
+    if (isNaN(weightKg) || isNaN(heightCm) || weightKg <= 0 || heightCm <= 0) {
+      resultEl.textContent = "—";
+      categoryEl.textContent = "";
+      return;
+    }
+
+    const bmi = calculateBMI(weightKg, heightCm);
+    resultEl.textContent = `BMI: ${roundTo(bmi, 1)}`;
+    categoryEl.textContent = getBMICategory(bmi);
+  }
+
+  weightInput.addEventListener("input", updateResult);
+  heightInput.addEventListener("input", updateResult);
+}
+
+/* ---------- 10. SETTINGS PAGE EXTRAS ---------- */
 
 function setupSettingsPage() {
   const clearCacheBtn = document.getElementById("clear-cache-btn");
@@ -277,7 +407,7 @@ function setupSettingsPage() {
   });
 }
 
-/* ---------- 8. GLOBAL ERROR SAFETY NET ---------- */
+/* ---------- 11. GLOBAL ERROR SAFETY NET ---------- */
 /* Catches anything unexpected (a bug we didn't anticipate) so it's
    always visible in the console for debugging, rather than failing
    silently. This doesn't change app behavior — it's a diagnostic
@@ -301,7 +431,10 @@ function initApp() {
   setupNavigation();
   setupDistanceConverter();
   setupTemperatureConverter();
+  setupWeightConverter();
   setupCurrencyConverter();
+  setupCalculator();
+  setupBMICalculator();
   setupSettingsPage();
   registerServiceWorker();
 }

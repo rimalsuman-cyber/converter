@@ -509,6 +509,113 @@ a {
   transform: translateX(20px);
 }
 
+/* --- Calculator --- */
+
+.calculator-card {
+  background-color: var(--color-surface);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calculator-display {
+  background-color: var(--color-bg);
+  border-radius: var(--radius-md);
+  padding: 24px 18px;
+  text-align: right;
+  font-size: clamp(1.8rem, 1.4rem + 2vw, 2.4rem);
+  font-weight: 700;
+  /* Long results shrink-to-fit horizontally instead of overflowing */
+  overflow-x: auto;
+  white-space: nowrap;
+  /* Hide the scrollbar visually while keeping it scrollable if needed */
+  scrollbar-width: none;
+}
+
+.calculator-display::-webkit-scrollbar {
+  display: none;
+}
+
+.calculator-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.calc-btn {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 18px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  transition: transform 0.1s ease, background-color 0.15s ease;
+}
+
+.calc-btn:active {
+  transform: scale(0.94);
+  background-color: var(--color-border);
+}
+
+.calc-btn--function {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.calc-btn--operator {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+
+.calc-btn--operator:active {
+  background-color: var(--color-primary-dark);
+}
+
+.calc-btn--equals {
+  background-color: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+  grid-column: span 2;
+}
+
+.calc-btn--equals:active {
+  background-color: var(--color-primary-dark);
+}
+
+.calc-btn--zero {
+  /* No column-span override needed — span 1 is already the grid
+     default. Listed here only so the "0 / . / =" row totals to
+     the grid's 4 columns is easy to reason about at a glance:
+     0 (1) + . (1) + = (2) = 4. */
+}
+
+/* --- BMI result --- */
+
+.result-box--bmi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.bmi-category {
+  font-size: 0.85rem;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+.bmi-disclaimer {
+  margin-top: 14px;
+  font-size: 0.78rem;
+  color: var(--color-text-muted);
+  line-height: 1.5;
+  text-align: center;
+}
+
 /* --- About page --- */
 
 .about-card {

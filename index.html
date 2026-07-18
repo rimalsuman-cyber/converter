@@ -113,25 +113,23 @@
           <span class="tool-desc">CHF, NPR, INR, USD...</span>
         </button>
 
-        <!-- Coming soon cards — visual placeholders for future features.
-             aria-disabled mirrors the disabled attribute for assistive
-             tech; aria-label clarifies "why" it's not actionable. -->
-        <button class="tool-card tool-card--soon" disabled aria-disabled="true" aria-label="Weight converter, coming soon">
+        <!-- Weight, Calculator, and BMI are now live (previously "coming soon"). -->
+        <button class="tool-card" data-target="page-weight">
           <span class="tool-icon" aria-hidden="true">⚖️</span>
           <span class="tool-name">Weight</span>
-          <span class="tool-desc">Coming soon</span>
+          <span class="tool-desc">Kilogram ⇄ Pound</span>
         </button>
 
-        <button class="tool-card tool-card--soon" disabled aria-disabled="true" aria-label="Calculator, coming soon">
+        <button class="tool-card" data-target="page-calculator">
           <span class="tool-icon" aria-hidden="true">🧮</span>
           <span class="tool-name">Calculator</span>
-          <span class="tool-desc">Coming soon</span>
+          <span class="tool-desc">Basic arithmetic</span>
         </button>
 
-        <button class="tool-card tool-card--soon" disabled aria-disabled="true" aria-label="BMI calculator, coming soon">
+        <button class="tool-card" data-target="page-bmi">
           <span class="tool-icon" aria-hidden="true">📐</span>
           <span class="tool-name">BMI</span>
-          <span class="tool-desc">Coming soon</span>
+          <span class="tool-desc">Body Mass Index</span>
         </button>
       </div>
     </section>
@@ -212,6 +210,95 @@
         <span id="currency-status" role="status" aria-live="polite">Loading rates…</span>
         <button id="currency-refresh-btn" class="text-btn">Refresh</button>
       </div>
+    </section>
+
+    <!-- ---------- WEIGHT CONVERTER PAGE ---------- -->
+    <section id="page-weight" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">⚖️</span> Weight Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="kg-input">Kilograms</label>
+          <input type="number" id="kg-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="weight-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="lbs-input">Pounds</label>
+          <input type="number" id="lbs-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- CALCULATOR PAGE ---------- -->
+    <section id="page-calculator" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🧮</span> Calculator</h2>
+
+      <div class="calculator-card">
+        <!-- role="status" + aria-live announces the running total to screen
+             readers as buttons are pressed, the same way sighted users see it. -->
+        <div class="calculator-display" id="calculator-display" role="status" aria-live="polite">0</div>
+
+        <div class="calculator-grid">
+          <button class="calc-btn calc-btn--function" data-calc-action="clear">C</button>
+          <button class="calc-btn calc-btn--function" data-calc-action="toggle-sign">±</button>
+          <button class="calc-btn calc-btn--function" data-calc-action="percent">%</button>
+          <button class="calc-btn calc-btn--operator" data-calc-operator="÷">÷</button>
+
+          <button class="calc-btn" data-calc-digit="7">7</button>
+          <button class="calc-btn" data-calc-digit="8">8</button>
+          <button class="calc-btn" data-calc-digit="9">9</button>
+          <button class="calc-btn calc-btn--operator" data-calc-operator="×">×</button>
+
+          <button class="calc-btn" data-calc-digit="4">4</button>
+          <button class="calc-btn" data-calc-digit="5">5</button>
+          <button class="calc-btn" data-calc-digit="6">6</button>
+          <button class="calc-btn calc-btn--operator" data-calc-operator="-">−</button>
+
+          <button class="calc-btn" data-calc-digit="1">1</button>
+          <button class="calc-btn" data-calc-digit="2">2</button>
+          <button class="calc-btn" data-calc-digit="3">3</button>
+          <button class="calc-btn calc-btn--operator" data-calc-operator="+">+</button>
+
+          <button class="calc-btn calc-btn--zero" data-calc-digit="0">0</button>
+          <button class="calc-btn" data-calc-action="decimal">.</button>
+          <button class="calc-btn calc-btn--equals" data-calc-action="equals" aria-label="Equals">=</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- BMI CALCULATOR PAGE ---------- -->
+    <section id="page-bmi" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">📐</span> BMI Calculator</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="bmi-weight-input">Weight (kg)</label>
+          <input type="number" id="bmi-weight-input" inputmode="decimal" placeholder="70" min="0" />
+        </div>
+
+        <div class="input-group">
+          <label for="bmi-height-input">Height (cm)</label>
+          <input type="number" id="bmi-height-input" inputmode="decimal" placeholder="175" min="0" />
+        </div>
+
+        <!-- aria-live announces the BMI value + category together whenever
+             either input changes. -->
+        <div class="result-box result-box--bmi" aria-live="polite">
+          <span id="bmi-result">—</span>
+          <span id="bmi-category" class="bmi-category"></span>
+        </div>
+      </div>
+
+      <p class="bmi-disclaimer">
+        BMI is a general screening tool and doesn't account for muscle mass,
+        bone density, or body composition. Consult a healthcare professional
+        for personalized advice.
+      </p>
     </section>
 
     <!-- ---------- SETTINGS PAGE ---------- -->

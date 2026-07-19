@@ -14,8 +14,17 @@
 import { kmToMiles, milesToKm } from "./modules/distance.js";
 import { celsiusToFahrenheit, fahrenheitToCelsius } from "./modules/temperature.js";
 import { kgToLbs, lbsToKg } from "./modules/weight.js";
+import { metersToFeet, feetToMeters } from "./modules/length.js";
+import { sqMetersToSqFeet, sqFeetToSqMeters } from "./modules/area.js";
+import { litersToGallons, gallonsToLiters } from "./modules/volume.js";
+import { kmhToMph, mphToKmh } from "./modules/speed.js";
 import { createCalculatorEngine } from "./modules/calculator.js";
 import { calculateBMI, getBMICategory } from "./modules/bmi.js";
+import {
+  calculateTipAmount,
+  calculateTotalWithTip,
+  calculatePerPersonShare,
+} from "./modules/tip.js";
 import { getExchangeRate, clearCurrencyCache } from "./api/currency.js";
 import { roundTo, formatRelativeTime } from "./utils/format.js";
 import { $, $$, debounce } from "./utils/dom.js";
@@ -26,6 +35,7 @@ import {
   DEFAULT_PAGE_ID,
   CURRENCY_BASE_CODE,
   CURRENCY_INPUT_DEBOUNCE_MS,
+  TIP_DEFAULT_PERCENT,
 } from "./config/constants.js";
 
 /* ---------- 1. SERVICE WORKER REGISTRATION ---------- */
@@ -235,7 +245,107 @@ function setupWeightConverter() {
   });
 }
 
-/* ---------- 7. CURRENCY CONVERTER ---------- */
+/* ---------- 7. LENGTH CONVERTER ---------- */
+
+function setupLengthConverter() {
+  const meterInput = document.getElementById("meter-input");
+  const feetInput = document.getElementById("feet-input");
+  const swapBtn = document.getElementById("length-swap-btn");
+  if (!meterInput || !feetInput || !swapBtn) return;
+
+  meterInput.addEventListener("input", () => {
+    const meters = parseFloat(meterInput.value);
+    feetInput.value = isNaN(meters) ? "" : roundTo(metersToFeet(meters));
+  });
+
+  feetInput.addEventListener("input", () => {
+    const feet = parseFloat(feetInput.value);
+    meterInput.value = isNaN(feet) ? "" : roundTo(feetToMeters(feet));
+  });
+
+  swapBtn.addEventListener("click", () => {
+    meterInput.value = "";
+    feetInput.value = "";
+    meterInput.focus();
+  });
+}
+
+/* ---------- 8. AREA CONVERTER ---------- */
+
+function setupAreaConverter() {
+  const sqmInput = document.getElementById("sqm-input");
+  const sqftInput = document.getElementById("sqft-input");
+  const swapBtn = document.getElementById("area-swap-btn");
+  if (!sqmInput || !sqftInput || !swapBtn) return;
+
+  sqmInput.addEventListener("input", () => {
+    const sqm = parseFloat(sqmInput.value);
+    sqftInput.value = isNaN(sqm) ? "" : roundTo(sqMetersToSqFeet(sqm));
+  });
+
+  sqftInput.addEventListener("input", () => {
+    const sqft = parseFloat(sqftInput.value);
+    sqmInput.value = isNaN(sqft) ? "" : roundTo(sqFeetToSqMeters(sqft));
+  });
+
+  swapBtn.addEventListener("click", () => {
+    sqmInput.value = "";
+    sqftInput.value = "";
+    sqmInput.focus();
+  });
+}
+
+/* ---------- 9. VOLUME CONVERTER ---------- */
+
+function setupVolumeConverter() {
+  const literInput = document.getElementById("liter-input");
+  const gallonInput = document.getElementById("gallon-input");
+  const swapBtn = document.getElementById("volume-swap-btn");
+  if (!literInput || !gallonInput || !swapBtn) return;
+
+  literInput.addEventListener("input", () => {
+    const liters = parseFloat(literInput.value);
+    gallonInput.value = isNaN(liters) ? "" : roundTo(litersToGallons(liters));
+  });
+
+  gallonInput.addEventListener("input", () => {
+    const gallons = parseFloat(gallonInput.value);
+    literInput.value = isNaN(gallons) ? "" : roundTo(gallonsToLiters(gallons));
+  });
+
+  swapBtn.addEventListener("click", () => {
+    literInput.value = "";
+    gallonInput.value = "";
+    literInput.focus();
+  });
+}
+
+/* ---------- 10. SPEED CONVERTER ---------- */
+
+function setupSpeedConverter() {
+  const kmhInput = document.getElementById("kmh-input");
+  const mphInput = document.getElementById("mph-input");
+  const swapBtn = document.getElementById("speed-swap-btn");
+  if (!kmhInput || !mphInput || !swapBtn) return;
+
+  kmhInput.addEventListener("input", () => {
+    const kmh = parseFloat(kmhInput.value);
+    mphInput.value = isNaN(kmh) ? "" : roundTo(kmhToMph(kmh));
+  });
+
+  mphInput.addEventListener("input", () => {
+    const mph = parseFloat(mphInput.value);
+    kmhInput.value = isNaN(mph) ? "" : roundTo(mphToKmh(mph));
+  });
+
+  swapBtn.addEventListener("click", () => {
+    kmhInput.value = "";
+    mphInput.value = "";
+    kmhInput.focus();
+  });
+}
+
+/* ---------- 11. CURRENCY CONVERTER ---------- */
 
 function setupCurrencyConverter() {
   const amountInput = document.getElementById("currency-amount-input");
@@ -292,7 +402,7 @@ function setupCurrencyConverter() {
   updateResult();
 }
 
-/* ---------- 8. CALCULATOR ---------- */
+/* ---------- 12. CALCULATOR ---------- */
 
 function setupCalculator() {
   const displayEl = document.getElementById("calculator-display");
@@ -366,7 +476,7 @@ function setupCalculator() {
   render();
 }
 
-/* ---------- 9. BMI CALCULATOR ---------- */
+/* ---------- 13. BMI CALCULATOR ---------- */
 
 function setupBMICalculator() {
   const weightInput = document.getElementById("bmi-weight-input");
@@ -394,7 +504,70 @@ function setupBMICalculator() {
   heightInput.addEventListener("input", updateResult);
 }
 
-/* ---------- 10. SETTINGS PAGE EXTRAS ---------- */
+/* ---------- 14. TIP CALCULATOR ---------- */
+
+function setupTipCalculator() {
+  const billInput = document.getElementById("tip-bill-input");
+  const customInput = document.getElementById("tip-custom-input");
+  const peopleInput = document.getElementById("tip-people-input");
+  const tipAmountEl = document.getElementById("tip-amount-result");
+  const totalEl = document.getElementById("tip-total-result");
+  const perPersonEl = document.getElementById("tip-per-person-result");
+  const presetButtons = $$(".tip-preset-btn");
+  if (!billInput || !customInput || !peopleInput || !tipAmountEl || !totalEl || !perPersonEl) return;
+
+  // Tracks which tip percentage is currently active — starts at the
+  // preset that's marked active in the HTML (20%).
+  let selectedTipPercent = TIP_DEFAULT_PERCENT;
+
+  /** Visually highlights the preset button matching the given percent
+   *  (or none, if a custom percentage is in use). */
+  function highlightPreset(percent) {
+    presetButtons.forEach((btn) => {
+      const isMatch = Number(btn.dataset.tipPercent) === percent;
+      btn.classList.toggle("tip-preset-btn--active", isMatch);
+      btn.setAttribute("aria-pressed", String(isMatch));
+    });
+  }
+
+  function updateResult() {
+    const billAmount = parseFloat(billInput.value) || 0;
+    const numberOfPeople = parseInt(peopleInput.value, 10) || 1;
+
+    const tipAmount = calculateTipAmount(billAmount, selectedTipPercent);
+    const total = calculateTotalWithTip(billAmount, tipAmount);
+    const perPerson = calculatePerPersonShare(total, numberOfPeople);
+
+    tipAmountEl.textContent = roundTo(tipAmount);
+    totalEl.textContent = roundTo(total);
+    perPersonEl.textContent = roundTo(perPerson);
+  }
+
+  presetButtons.forEach((btn) => {
+    btn.addEventListener("click", () => {
+      selectedTipPercent = Number(btn.dataset.tipPercent);
+      customInput.value = ""; // a preset overrides any custom entry
+      highlightPreset(selectedTipPercent);
+      updateResult();
+    });
+  });
+
+  customInput.addEventListener("input", () => {
+    const customPercent = parseFloat(customInput.value);
+    if (!isNaN(customPercent) && customPercent >= 0) {
+      selectedTipPercent = customPercent;
+      highlightPreset(null); // no preset matches a custom value
+    }
+    updateResult();
+  });
+
+  billInput.addEventListener("input", updateResult);
+  peopleInput.addEventListener("input", updateResult);
+
+  updateResult();
+}
+
+/* ---------- 15. SETTINGS PAGE EXTRAS ---------- */
 
 function setupSettingsPage() {
   const clearCacheBtn = document.getElementById("clear-cache-btn");
@@ -407,7 +580,7 @@ function setupSettingsPage() {
   });
 }
 
-/* ---------- 11. GLOBAL ERROR SAFETY NET ---------- */
+/* ---------- 16. GLOBAL ERROR SAFETY NET ---------- */
 /* Catches anything unexpected (a bug we didn't anticipate) so it's
    always visible in the console for debugging, rather than failing
    silently. This doesn't change app behavior — it's a diagnostic
@@ -432,9 +605,14 @@ function initApp() {
   setupDistanceConverter();
   setupTemperatureConverter();
   setupWeightConverter();
+  setupLengthConverter();
+  setupAreaConverter();
+  setupVolumeConverter();
+  setupSpeedConverter();
   setupCurrencyConverter();
   setupCalculator();
   setupBMICalculator();
+  setupTipCalculator();
   setupSettingsPage();
   registerServiceWorker();
 }

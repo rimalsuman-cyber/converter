@@ -40,8 +40,19 @@ export const PAGE_TITLES = {
   "page-weight": "Weight",
   "page-calculator": "Calculator",
   "page-bmi": "BMI Calculator",
+  "page-length": "Length",
+  "page-area": "Area",
+  "page-volume": "Volume",
+  "page-speed": "Speed",
+  "page-tip": "Tip Calculator",
   "page-settings": "Settings",
   "page-about": "About",
 };
 
 export const DEFAULT_PAGE_ID = "page-home";
+
+/* ---------- Tip Calculator ----------
+   Keep these in sync with the preset buttons in index.html's
+   Tip Calculator page (data-tip-percent attributes). */
+export const TIP_PRESET_PERCENTAGES = [10, 15, 20, 25];
+export const TIP_DEFAULT_PERCENT = 20;

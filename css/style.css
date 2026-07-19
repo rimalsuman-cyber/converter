@@ -593,6 +593,55 @@ a {
      0 (1) + . (1) + = (2) = 4. */
 }
 
+/* --- Tip Calculator --- */
+
+.tip-preset-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.tip-preset-btn {
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 10px 0;
+  font-weight: 600;
+  font-size: 0.9rem;
+  transition: transform 0.1s ease, background-color 0.15s ease, color 0.15s ease;
+}
+
+.tip-preset-btn:active {
+  transform: scale(0.94);
+}
+
+.tip-preset-btn--active {
+  background-color: var(--color-primary);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+.result-box--tip {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  text-align: left;
+  font-size: 1rem;
+}
+
+.tip-result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.tip-result-row--highlight {
+  font-size: 1.3rem;
+  font-weight: 700;
+  padding-top: 8px;
+  border-top: 1px solid rgba(255, 255, 255, 0.25);
+}
+
 /* --- BMI result --- */
 
 .result-box--bmi {

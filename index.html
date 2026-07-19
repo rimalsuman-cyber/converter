@@ -127,9 +127,40 @@
         </button>
 
         <button class="tool-card" data-target="page-bmi">
-          <span class="tool-icon" aria-hidden="true">📐</span>
+          <span class="tool-icon" aria-hidden="true">🧍</span>
           <span class="tool-name">BMI</span>
           <span class="tool-desc">Body Mass Index</span>
+        </button>
+
+        <!-- Length, Area, Volume, Speed, and Tip Calculator: newest additions. -->
+        <button class="tool-card" data-target="page-length">
+          <span class="tool-icon" aria-hidden="true">📐</span>
+          <span class="tool-name">Length</span>
+          <span class="tool-desc">Meter ⇄ Feet</span>
+        </button>
+
+        <button class="tool-card" data-target="page-area">
+          <span class="tool-icon" aria-hidden="true">🔲</span>
+          <span class="tool-name">Area</span>
+          <span class="tool-desc">m² ⇄ ft²</span>
+        </button>
+
+        <button class="tool-card" data-target="page-volume">
+          <span class="tool-icon" aria-hidden="true">🧴</span>
+          <span class="tool-name">Volume</span>
+          <span class="tool-desc">Liter ⇄ Gallon</span>
+        </button>
+
+        <button class="tool-card" data-target="page-speed">
+          <span class="tool-icon" aria-hidden="true">🚀</span>
+          <span class="tool-name">Speed</span>
+          <span class="tool-desc">km/h ⇄ mph</span>
+        </button>
+
+        <button class="tool-card" data-target="page-tip">
+          <span class="tool-icon" aria-hidden="true">🧾</span>
+          <span class="tool-name">Tip Calculator</span>
+          <span class="tool-desc">Bill, tip & split</span>
         </button>
       </div>
     </section>
@@ -232,6 +263,86 @@
       </div>
     </section>
 
+    <!-- ---------- LENGTH CONVERTER PAGE ---------- -->
+    <section id="page-length" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">📐</span> Length Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="meter-input">Meters</label>
+          <input type="number" id="meter-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="length-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="feet-input">Feet</label>
+          <input type="number" id="feet-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- AREA CONVERTER PAGE ---------- -->
+    <section id="page-area" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🔲</span> Area Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="sqm-input">Square Meters (m²)</label>
+          <input type="number" id="sqm-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="area-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="sqft-input">Square Feet (ft²)</label>
+          <input type="number" id="sqft-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- VOLUME CONVERTER PAGE ---------- -->
+    <section id="page-volume" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🧴</span> Volume Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="liter-input">Liters</label>
+          <input type="number" id="liter-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="volume-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="gallon-input">Gallons (US)</label>
+          <input type="number" id="gallon-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- SPEED CONVERTER PAGE ---------- -->
+    <section id="page-speed" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🚀</span> Speed Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="kmh-input">Kilometers/hour</label>
+          <input type="number" id="kmh-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="speed-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="mph-input">Miles/hour</label>
+          <input type="number" id="mph-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
     <!-- ---------- CALCULATOR PAGE ---------- -->
     <section id="page-calculator" class="page">
       <button class="back-btn" data-back>← Back</button>
@@ -273,7 +384,7 @@
     <!-- ---------- BMI CALCULATOR PAGE ---------- -->
     <section id="page-bmi" class="page">
       <button class="back-btn" data-back>← Back</button>
-      <h2 class="section-title"><span aria-hidden="true">📐</span> BMI Calculator</h2>
+      <h2 class="section-title"><span aria-hidden="true">🧍</span> BMI Calculator</h2>
 
       <div class="converter-card">
         <div class="input-group">
@@ -299,6 +410,57 @@
         bone density, or body composition. Consult a healthcare professional
         for personalized advice.
       </p>
+    </section>
+
+    <!-- ---------- TIP CALCULATOR PAGE ---------- -->
+    <section id="page-tip" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🧾</span> Tip Calculator</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="tip-bill-input">Bill Amount</label>
+          <input type="number" id="tip-bill-input" inputmode="decimal" placeholder="0" min="0" />
+        </div>
+
+        <div class="input-group">
+          <span id="tip-percent-label">Tip Percentage</span>
+          <!-- role="group" + aria-labelledby ties this button set to its
+               label for screen readers, the same way a fieldset/legend would. -->
+          <div class="tip-preset-grid" role="group" aria-labelledby="tip-percent-label">
+            <button type="button" class="tip-preset-btn" data-tip-percent="10">10%</button>
+            <button type="button" class="tip-preset-btn" data-tip-percent="15">15%</button>
+            <button type="button" class="tip-preset-btn tip-preset-btn--active" data-tip-percent="20" aria-pressed="true">20%</button>
+            <button type="button" class="tip-preset-btn" data-tip-percent="25">25%</button>
+          </div>
+        </div>
+
+        <div class="input-group">
+          <label for="tip-custom-input">Custom % (optional)</label>
+          <input type="number" id="tip-custom-input" inputmode="decimal" placeholder="e.g. 18" min="0" />
+        </div>
+
+        <div class="input-group">
+          <label for="tip-people-input">Split Between (people)</label>
+          <input type="number" id="tip-people-input" inputmode="numeric" placeholder="1" min="1" value="1" />
+        </div>
+
+        <!-- aria-live announces the recalculated totals whenever any input changes. -->
+        <div class="result-box result-box--tip" aria-live="polite">
+          <div class="tip-result-row">
+            <span>Tip Amount</span>
+            <span id="tip-amount-result">—</span>
+          </div>
+          <div class="tip-result-row">
+            <span>Total</span>
+            <span id="tip-total-result">—</span>
+          </div>
+          <div class="tip-result-row tip-result-row--highlight">
+            <span>Per Person</span>
+            <span id="tip-per-person-result">—</span>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- ---------- SETTINGS PAGE ---------- -->

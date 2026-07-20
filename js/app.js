@@ -43,10 +43,62 @@ import {
   THEME_STORAGE_KEY,
   PAGE_TITLES,
   DEFAULT_PAGE_ID,
-  CURRENCY_BASE_CODE,
   CURRENCY_INPUT_DEBOUNCE_MS,
   TIP_DEFAULT_PERCENT,
 } from "./config/constants.js";
+
+const TOP_CURRENCIES = [
+  { code: "ARS", label: "🇦🇷 Argentina — ARS, Argentine Peso" },
+  { code: "AUD", label: "🇦🇺 Australia — AUD, Australian Dollar" },
+  { code: "BHD", label: "🇧🇭 Bahrain — BHD, Bahraini Dinar" },
+  { code: "BDT", label: "🇧🇩 Bangladesh — BDT, Bangladeshi Taka" },
+  { code: "BRL", label: "🇧🇷 Brazil — BRL, Brazilian Real" },
+  { code: "CAD", label: "🇨🇦 Canada — CAD, Canadian Dollar" },
+  { code: "CLP", label: "🇨🇱 Chile — CLP, Chilean Peso" },
+  { code: "CNY", label: "🇨🇳 China — CNY, Chinese Yuan" },
+  { code: "COP", label: "🇨🇴 Colombia — COP, Colombian Peso" },
+  { code: "CZK", label: "🇨🇿 Czech Republic — CZK, Czech Koruna" },
+  { code: "DKK", label: "🇩🇰 Denmark — DKK, Danish Krone" },
+  { code: "EGP", label: "🇪🇬 Egypt — EGP, Egyptian Pound" },
+  { code: "EUR", label: "🇪🇺 European Union — EUR, Euro" },
+  { code: "HKD", label: "🇭🇰 Hong Kong — HKD, Hong Kong Dollar" },
+  { code: "HUF", label: "🇭🇺 Hungary — HUF, Hungarian Forint" },
+  { code: "INR", label: "🇮🇳 India — INR, Indian Rupee" },
+  { code: "IDR", label: "🇮🇩 Indonesia — IDR, Indonesian Rupiah" },
+  { code: "ILS", label: "🇮🇱 Israel — ILS, Israeli Shekel" },
+  { code: "JPY", label: "🇯🇵 Japan — JPY, Japanese Yen" },
+  { code: "KES", label: "🇰🇪 Kenya — KES, Kenyan Shilling" },
+  { code: "KWD", label: "🇰🇼 Kuwait — KWD, Kuwaiti Dinar" },
+  { code: "MYR", label: "🇲🇾 Malaysia — MYR, Malaysian Ringgit" },
+  { code: "MXN", label: "🇲🇽 Mexico — MXN, Mexican Peso" },
+  { code: "MAD", label: "🇲🇦 Morocco — MAD, Moroccan Dirham" },
+  { code: "NPR", label: "🇳🇵 Nepal — NPR, Nepalese Rupee" },
+  { code: "NZD", label: "🇳🇿 New Zealand — NZD, New Zealand Dollar" },
+  { code: "NGN", label: "🇳🇬 Nigeria — NGN, Nigerian Naira" },
+  { code: "NOK", label: "🇳🇴 Norway — NOK, Norwegian Krone" },
+  { code: "OMR", label: "🇴🇲 Oman — OMR, Omani Rial" },
+  { code: "PKR", label: "🇵🇰 Pakistan — PKR, Pakistani Rupee" },
+  { code: "PEN", label: "🇵🇪 Peru — PEN, Peruvian Sol" },
+  { code: "PHP", label: "🇵🇭 Philippines — PHP, Philippine Peso" },
+  { code: "PLN", label: "🇵🇱 Poland — PLN, Polish Zloty" },
+  { code: "QAR", label: "🇶🇦 Qatar — QAR, Qatari Riyal" },
+  { code: "RON", label: "🇷🇴 Romania — RON, Romanian Leu" },
+  { code: "RUB", label: "🇷🇺 Russia — RUB, Russian Ruble" },
+  { code: "SAR", label: "🇸🇦 Saudi Arabia — SAR, Saudi Riyal" },
+  { code: "SGD", label: "🇸🇬 Singapore — SGD, Singapore Dollar" },
+  { code: "ZAR", label: "🇿🇦 South Africa — ZAR, South African Rand" },
+  { code: "KRW", label: "🇰🇷 South Korea — KRW, South Korean Won" },
+  { code: "LKR", label: "🇱🇰 Sri Lanka — LKR, Sri Lankan Rupee" },
+  { code: "SEK", label: "🇸🇪 Sweden — SEK, Swedish Krona" },
+  { code: "CHF", label: "🇨🇭 Switzerland — CHF, Swiss Franc" },
+  { code: "TWD", label: "🇹🇼 Taiwan — TWD, Taiwan Dollar" },
+  { code: "THB", label: "🇹🇭 Thailand — THB, Thai Baht" },
+  { code: "TRY", label: "🇹🇷 Turkey — TRY, Turkish Lira" },
+  { code: "AED", label: "🇦🇪 United Arab Emirates — AED, UAE Dirham" },
+  { code: "GBP", label: "🇬🇧 United Kingdom — GBP, British Pound" },
+  { code: "USD", label: "🇺🇸 United States — USD, US Dollar" },
+  { code: "VND", label: "🇻🇳 Vietnam — VND, Vietnamese Dong" },
+];
 
 /* ---------- 1. SERVICE WORKER REGISTRATION ---------- */
 
@@ -376,13 +428,33 @@ function setupSpeedConverter() {
 
 function setupCurrencyConverter() {
   const amountInput = document.getElementById("currency-amount-input");
+  const sourceSelect = document.getElementById("currency-source-select");
+  const sourceFlag = document.getElementById("currency-source-flag");
   const targetSelect = document.getElementById("currency-target-select");
+  const targetFlag = document.getElementById("currency-target-flag");
   const resultEl = document.getElementById("currency-result");
   const statusEl = document.getElementById("currency-status");
   const refreshBtn = document.getElementById("currency-refresh-btn");
-  if (!amountInput || !targetSelect || !resultEl || !statusEl || !refreshBtn) return;
+  if (!amountInput || !sourceSelect || !sourceFlag || !targetSelect || !targetFlag || !resultEl || !statusEl || !refreshBtn) return;
 
   const statusRow = statusEl.closest(".status-row");
+  const currencyOptions = TOP_CURRENCIES
+    .map((currency) => `<option value="${currency.code}">${currency.label}</option>`)
+    .join("");
+
+  sourceSelect.innerHTML = currencyOptions;
+  targetSelect.innerHTML = currencyOptions;
+  sourceSelect.value = "CHF";
+  targetSelect.value = "NPR";
+
+  function flagForCurrency(code) {
+    return TOP_CURRENCIES.find((currency) => currency.code === code)?.label.split(" ")[0] || "🏳️";
+  }
+
+  function updateCurrencyFlags() {
+    sourceFlag.textContent = flagForCurrency(sourceSelect.value);
+    targetFlag.textContent = flagForCurrency(targetSelect.value);
+  }
 
   /**
    * Re-calculates and displays the converted amount using
@@ -390,6 +462,7 @@ function setupCurrencyConverter() {
    */
   async function updateResult({ forceRefresh = false } = {}) {
     const amount = parseFloat(amountInput.value) || 0;
+    const sourceCurrency = sourceSelect.value;
     const targetCurrency = targetSelect.value;
 
     statusEl.textContent = "Fetching latest rates…";
@@ -397,13 +470,13 @@ function setupCurrencyConverter() {
 
     try {
       const { rate, lastUpdated, fromCache } = await getExchangeRate(
-        CURRENCY_BASE_CODE,
+        sourceCurrency,
         targetCurrency,
         forceRefresh
       );
 
       const converted = amount * rate;
-      resultEl.textContent = `${amount || 0} ${CURRENCY_BASE_CODE} = ${roundTo(converted)} ${targetCurrency}`;
+      resultEl.textContent = `${amount || 0} ${sourceCurrency} = ${roundTo(converted)} ${targetCurrency}`;
 
       statusEl.textContent = fromCache
         ? `Offline data — last updated ${formatRelativeTime(lastUpdated)}`
@@ -422,10 +495,18 @@ function setupCurrencyConverter() {
   const debouncedUpdate = debounce(updateResult, CURRENCY_INPUT_DEBOUNCE_MS);
 
   amountInput.addEventListener("input", () => debouncedUpdate());
-  targetSelect.addEventListener("change", () => updateResult());
+  sourceSelect.addEventListener("change", () => {
+    updateCurrencyFlags();
+    updateResult();
+  });
+  targetSelect.addEventListener("change", () => {
+    updateCurrencyFlags();
+    updateResult();
+  });
   refreshBtn.addEventListener("click", () => updateResult({ forceRefresh: true }));
 
   // Load rates as soon as the app starts
+  updateCurrencyFlags();
   updateResult();
 }
 
@@ -510,7 +591,22 @@ function setupBMICalculator() {
   const heightInput = document.getElementById("bmi-height-input");
   const resultEl = document.getElementById("bmi-result");
   const categoryEl = document.getElementById("bmi-category");
+  const resultBox = resultEl?.closest(".result-box--bmi");
   if (!weightInput || !heightInput || !resultEl || !categoryEl) return;
+
+  function setBmiTheme(category) {
+    resultBox?.classList.remove(
+      "bmi-underweight",
+      "bmi-normal",
+      "bmi-overweight",
+      "bmi-obese"
+    );
+
+    if (category === "Underweight") resultBox?.classList.add("bmi-underweight");
+    if (category === "Normal weight") resultBox?.classList.add("bmi-normal");
+    if (category === "Overweight") resultBox?.classList.add("bmi-overweight");
+    if (category === "Obese") resultBox?.classList.add("bmi-obese");
+  }
 
   function updateResult() {
     const weightKg = parseFloat(weightInput.value);
@@ -519,12 +615,15 @@ function setupBMICalculator() {
     if (isNaN(weightKg) || isNaN(heightCm) || weightKg <= 0 || heightCm <= 0) {
       resultEl.textContent = "—";
       categoryEl.textContent = "";
+      setBmiTheme(null);
       return;
     }
 
     const bmi = calculateBMI(weightKg, heightCm);
+    const category = getBMICategory(bmi);
     resultEl.textContent = `BMI: ${roundTo(bmi, 1)}`;
-    categoryEl.textContent = getBMICategory(bmi);
+    categoryEl.textContent = category;
+    setBmiTheme(category);
   }
 
   weightInput.addEventListener("input", updateResult);

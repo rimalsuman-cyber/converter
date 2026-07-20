@@ -390,6 +390,41 @@ a {
   border-color: var(--color-primary);
 }
 
+.currency-select-row {
+  display: grid;
+  grid-template-columns: 56px minmax(0, 1fr);
+  align-items: center;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  transition: border-color 0.2s ease;
+}
+
+.currency-select-row:focus-within {
+  border-color: var(--color-primary);
+}
+
+.currency-flag {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 54px;
+  border-right: 1px solid var(--color-border);
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.currency-select-row select {
+  border: 0;
+  border-radius: 0;
+  background-color: transparent;
+}
+
+.currency-select-row select:focus {
+  box-shadow: none;
+}
+
 /* Swap button between two inputs */
 .swap-btn {
   align-self: center;
@@ -651,6 +686,22 @@ a {
   gap: 4px;
 }
 
+.result-box--bmi.bmi-underweight {
+  background: linear-gradient(135deg, #06b6d4, #2563eb);
+}
+
+.result-box--bmi.bmi-normal {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.result-box--bmi.bmi-overweight {
+  background: linear-gradient(135deg, #f59e0b, #ea580c);
+}
+
+.result-box--bmi.bmi-obese {
+  background: linear-gradient(135deg, #ef4444, #be123c);
+}
+
 .bmi-category {
   font-size: 0.85rem;
   font-weight: 600;
@@ -714,4 +765,3 @@ a {
     gap: 20px;
   }
 }
-

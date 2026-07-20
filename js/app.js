@@ -172,9 +172,6 @@ function applyTheme(theme) {
   // even exists yet.
   document.documentElement.classList.toggle("dark-theme", isDark);
 
-  const themeIcon = document.getElementById("theme-icon");
-  if (themeIcon) themeIcon.textContent = isDark ? "☀️" : "🌙";
-
   const darkModeSwitch = document.getElementById("dark-mode-switch");
   if (darkModeSwitch) darkModeSwitch.checked = isDark;
 }
@@ -196,9 +193,7 @@ function toggleTheme() {
 function setupTheme() {
   applyTheme(getPreferredTheme());
 
-  const themeToggleBtn = document.getElementById("theme-toggle-btn");
   const darkModeSwitch = document.getElementById("dark-mode-switch");
-  themeToggleBtn?.addEventListener("click", toggleTheme);
   darkModeSwitch?.addEventListener("change", toggleTheme);
 }
 
@@ -610,7 +605,7 @@ function setupTimeZoneConverter() {
 
   dateTimeInput.value = getLocalDateTimeValue();
   fromSelect.value = "Europe/Zurich";
-  toSelect.value = "Asia/Kolkata";
+  toSelect.value = "Asia/Kathmandu";
 
   function updateResult() {
     if (!dateTimeInput.value) {
@@ -619,7 +614,7 @@ function setupTimeZoneConverter() {
     }
 
     const sourceDate = dateFromZoneInput(dateTimeInput.value, fromSelect.value);
-    resultEl.textContent = `${formatInZone(sourceDate, fromSelect.value)} ${fromSelect.value} = ${formatInZone(sourceDate, toSelect.value)} ${toSelect.value}`;
+    resultEl.textContent = formatInZone(sourceDate, toSelect.value);
   }
 
   dateTimeInput.addEventListener("input", updateResult);
@@ -806,20 +801,30 @@ function setupPercentageCalculator() {
 function setupAgeCalculator() {
   const birthInput = document.getElementById("age-birth-input");
   const compareInput = document.getElementById("age-compare-input");
-  const resultEl = document.getElementById("age-result");
-  if (!birthInput || !compareInput || !resultEl) return;
+  const yearsEl = document.getElementById("age-years-result");
+  const monthsEl = document.getElementById("age-months-result");
+  const daysEl = document.getElementById("age-days-result");
+  const totalDaysEl = document.getElementById("age-total-days-result");
+  if (!birthInput || !compareInput || !yearsEl || !monthsEl || !daysEl || !totalDaysEl) return;
+
+  function setAgeResults(years, months, days, totalDays) {
+    yearsEl.textContent = years;
+    monthsEl.textContent = months;
+    daysEl.textContent = days;
+    totalDaysEl.textContent = totalDays;
+  }
 
   function updateResult() {
     const birthDate = new Date(birthInput.value);
     const compareDate = new Date(compareInput.value);
 
     if (isNaN(birthDate.getTime()) || isNaN(compareDate.getTime()) || birthDate > compareDate) {
-      resultEl.textContent = "Choose valid dates";
+      setAgeResults("—", "—", "—", "—");
       return;
     }
 
     const age = calculateAgeParts(birthDate, compareDate);
-    resultEl.textContent = `${age.years} years, ${age.months} months, ${age.days} days (${roundTo(age.totalDays, 0)} days)`;
+    setAgeResults(age.years, age.months, age.days, roundTo(age.totalDays, 0));
   }
 
   birthInput.value = "2000-01-01";

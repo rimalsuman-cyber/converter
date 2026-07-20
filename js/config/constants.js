@@ -33,7 +33,7 @@ export const CURRENCY_INPUT_DEBOUNCE_MS = 250;
    when that page is active. Adding a future page (e.g. Weight
    converter) just means adding one line here. */
 export const PAGE_TITLES = {
-  "page-home": "UnitKit",
+  "page-home": "UTILITY: CONVERTER,",
   "page-distance": "Distance",
   "page-temperature": "Temperature",
   "page-currency": "Currency",

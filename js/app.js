@@ -25,6 +25,16 @@ import {
   calculateTotalWithTip,
   calculatePerPersonShare,
 } from "./modules/tip.js";
+import {
+  dateFromZoneInput,
+  formatInZone,
+  getLocalDateTimeValue,
+} from "./modules/timezone.js";
+import { canScanQrCodes, createQrCodeUrl } from "./modules/qr.js";
+import { calculateScientificExpression } from "./modules/scientific.js";
+import { calculateTax } from "./modules/tax.js";
+import { calculatePercentage } from "./modules/percentage.js";
+import { calculateAgeParts } from "./modules/age.js";
 import { getExchangeRate, clearCurrencyCache } from "./api/currency.js";
 import { roundTo, formatRelativeTime } from "./utils/format.js";
 import { $, $$, debounce } from "./utils/dom.js";
@@ -150,8 +160,7 @@ function getPreferredTheme() {
   const saved = readString(THEME_STORAGE_KEY);
   if (saved) return saved;
 
-  const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-  return prefersDark ? "dark" : "light";
+  return "dark";
 }
 
 function toggleTheme() {
@@ -567,7 +576,237 @@ function setupTipCalculator() {
   updateResult();
 }
 
-/* ---------- 15. SETTINGS PAGE EXTRAS ---------- */
+/* ---------- 15. TIME ZONE CONVERTER ---------- */
+
+function setupTimeZoneConverter() {
+  const dateTimeInput = document.getElementById("timezone-datetime-input");
+  const fromSelect = document.getElementById("timezone-from-select");
+  const toSelect = document.getElementById("timezone-to-select");
+  const resultEl = document.getElementById("timezone-result");
+  if (!dateTimeInput || !fromSelect || !toSelect || !resultEl) return;
+
+  dateTimeInput.value = getLocalDateTimeValue();
+  fromSelect.value = "Europe/Zurich";
+  toSelect.value = "Asia/Kolkata";
+
+  function updateResult() {
+    if (!dateTimeInput.value) {
+      resultEl.textContent = "—";
+      return;
+    }
+
+    const sourceDate = dateFromZoneInput(dateTimeInput.value, fromSelect.value);
+    resultEl.textContent = `${formatInZone(sourceDate, fromSelect.value)} ${fromSelect.value} = ${formatInZone(sourceDate, toSelect.value)} ${toSelect.value}`;
+  }
+
+  dateTimeInput.addEventListener("input", updateResult);
+  fromSelect.addEventListener("change", updateResult);
+  toSelect.addEventListener("change", updateResult);
+  updateResult();
+}
+
+/* ---------- 16. QR CODE GENERATOR / SCANNER ---------- */
+
+function setupQrTool() {
+  const textInput = document.getElementById("qr-text-input");
+  const imageEl = document.getElementById("qr-code-image");
+  const scanBtn = document.getElementById("qr-scan-btn");
+  const videoEl = document.getElementById("qr-video");
+  const resultEl = document.getElementById("qr-scan-result");
+  if (!textInput || !imageEl || !scanBtn || !videoEl || !resultEl) return;
+
+  let qrStream = null;
+
+  function stopScanner() {
+    if (!qrStream) return;
+    qrStream.getTracks().forEach((track) => track.stop());
+    qrStream = null;
+    scanBtn.textContent = "Start scanner";
+  }
+
+  function updateQrCode() {
+    const text = textInput.value.trim();
+    if (!text) {
+      imageEl.removeAttribute("src");
+      imageEl.alt = "";
+      return;
+    }
+
+    imageEl.src = createQrCodeUrl(text);
+    imageEl.alt = `QR code for ${text}`;
+  }
+
+  async function startScanner() {
+    if (qrStream) {
+      stopScanner();
+      return;
+    }
+
+    if (!canScanQrCodes()) {
+      resultEl.textContent = "QR scanning is not supported in this browser.";
+      return;
+    }
+
+    try {
+      qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+      videoEl.srcObject = qrStream;
+      await videoEl.play();
+      scanBtn.textContent = "Stop scanner";
+
+      const detector = new BarcodeDetector({ formats: ["qr_code"] });
+      const scan = async () => {
+        if (!qrStream) return;
+
+        const codes = await detector.detect(videoEl);
+        if (codes.length) {
+          resultEl.textContent = codes[0].rawValue;
+          stopScanner();
+          return;
+        }
+
+        requestAnimationFrame(scan);
+      };
+
+      scan();
+    } catch (err) {
+      resultEl.textContent = "Camera access was not available.";
+      stopScanner();
+    }
+  }
+
+  textInput.value = "https://rimalsuman-cyber.github.io/converter/";
+  textInput.addEventListener("input", updateQrCode);
+  scanBtn.addEventListener("click", startScanner);
+  updateQrCode();
+}
+
+/* ---------- 17. SCIENTIFIC CALCULATOR ---------- */
+
+function setupScientificCalculator() {
+  const expressionInput = document.getElementById("scientific-expression-input");
+  const resultEl = document.getElementById("scientific-result");
+  if (!expressionInput || !resultEl) return;
+
+  function updateResult() {
+    const expression = expressionInput.value.trim();
+    if (!expression) {
+      resultEl.textContent = "—";
+      return;
+    }
+
+    try {
+      resultEl.textContent = roundTo(calculateScientificExpression(expression), 8);
+    } catch (err) {
+      resultEl.textContent = "Invalid expression";
+    }
+  }
+
+  expressionInput.value = "sin(pi / 2) + sqrt(144)";
+  expressionInput.addEventListener("input", updateResult);
+  updateResult();
+}
+
+/* ---------- 18. GST / VAT CALCULATOR ---------- */
+
+function setupTaxCalculator() {
+  const amountInput = document.getElementById("tax-amount-input");
+  const rateInput = document.getElementById("tax-rate-input");
+  const modeSelect = document.getElementById("tax-mode-select");
+  const netEl = document.getElementById("tax-net-result");
+  const taxEl = document.getElementById("tax-value-result");
+  const totalEl = document.getElementById("tax-total-result");
+  if (!amountInput || !rateInput || !modeSelect || !netEl || !taxEl || !totalEl) return;
+
+  function updateResult() {
+    const amount = parseFloat(amountInput.value);
+    const rate = parseFloat(rateInput.value);
+
+    if (isNaN(amount) || isNaN(rate)) {
+      netEl.textContent = "—";
+      taxEl.textContent = "—";
+      totalEl.textContent = "—";
+      return;
+    }
+
+    const result = calculateTax(amount, rate, modeSelect.value);
+    netEl.textContent = roundTo(result.net);
+    taxEl.textContent = roundTo(result.tax);
+    totalEl.textContent = roundTo(result.total);
+  }
+
+  amountInput.value = "1000";
+  rateInput.value = "18";
+  amountInput.addEventListener("input", updateResult);
+  rateInput.addEventListener("input", updateResult);
+  modeSelect.addEventListener("change", updateResult);
+  updateResult();
+}
+
+/* ---------- 19. PERCENTAGE CALCULATOR ---------- */
+
+function setupPercentageCalculator() {
+  const baseInput = document.getElementById("percentage-base-input");
+  const percentInput = document.getElementById("percentage-value-input");
+  const modeSelect = document.getElementById("percentage-mode-select");
+  const resultEl = document.getElementById("percentage-result");
+  if (!baseInput || !percentInput || !modeSelect || !resultEl) return;
+
+  function updateResult() {
+    const base = parseFloat(baseInput.value);
+    const percent = parseFloat(percentInput.value);
+
+    if (isNaN(base) || isNaN(percent)) {
+      resultEl.textContent = "—";
+      return;
+    }
+
+    const result = calculatePercentage(base, percent, modeSelect.value);
+    if (modeSelect.value === "increase") {
+      resultEl.textContent = `${roundTo(base)} increased by ${roundTo(percent)}% = ${roundTo(result)}`;
+    } else if (modeSelect.value === "decrease") {
+      resultEl.textContent = `${roundTo(base)} decreased by ${roundTo(percent)}% = ${roundTo(result)}`;
+    } else {
+      resultEl.textContent = `${roundTo(percent)}% of ${roundTo(base)} = ${roundTo(result)}`;
+    }
+  }
+
+  baseInput.value = "250";
+  percentInput.value = "12";
+  baseInput.addEventListener("input", updateResult);
+  percentInput.addEventListener("input", updateResult);
+  modeSelect.addEventListener("change", updateResult);
+  updateResult();
+}
+
+/* ---------- 20. AGE CALCULATOR ---------- */
+
+function setupAgeCalculator() {
+  const birthInput = document.getElementById("age-birth-input");
+  const compareInput = document.getElementById("age-compare-input");
+  const resultEl = document.getElementById("age-result");
+  if (!birthInput || !compareInput || !resultEl) return;
+
+  function updateResult() {
+    const birthDate = new Date(birthInput.value);
+    const compareDate = new Date(compareInput.value);
+
+    if (isNaN(birthDate.getTime()) || isNaN(compareDate.getTime()) || birthDate > compareDate) {
+      resultEl.textContent = "Choose valid dates";
+      return;
+    }
+
+    const age = calculateAgeParts(birthDate, compareDate);
+    resultEl.textContent = `${age.years} years, ${age.months} months, ${age.days} days (${roundTo(age.totalDays, 0)} days)`;
+  }
+
+  birthInput.value = "2000-01-01";
+  compareInput.value = new Date().toISOString().slice(0, 10);
+  birthInput.addEventListener("input", updateResult);
+  compareInput.addEventListener("input", updateResult);
+  updateResult();
+}
+
+/* ---------- 21. SETTINGS PAGE EXTRAS ---------- */
 
 function setupSettingsPage() {
   const clearCacheBtn = document.getElementById("clear-cache-btn");
@@ -580,7 +819,7 @@ function setupSettingsPage() {
   });
 }
 
-/* ---------- 16. GLOBAL ERROR SAFETY NET ---------- */
+/* ---------- 22. GLOBAL ERROR SAFETY NET ---------- */
 /* Catches anything unexpected (a bug we didn't anticipate) so it's
    always visible in the console for debugging, rather than failing
    silently. This doesn't change app behavior — it's a diagnostic
@@ -613,6 +852,12 @@ function initApp() {
   setupCalculator();
   setupBMICalculator();
   setupTipCalculator();
+  setupTimeZoneConverter();
+  setupQrTool();
+  setupScientificCalculator();
+  setupTaxCalculator();
+  setupPercentageCalculator();
+  setupAgeCalculator();
   setupSettingsPage();
   registerServiceWorker();
 }

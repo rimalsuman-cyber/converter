@@ -19,7 +19,7 @@
      new version instead of a stale cached copy.
 ========================================================= */
 
-const CACHE_NAME = "unitkit-v4";
+const CACHE_NAME = "unitkit-v5";
 
 // Every file needed to run the app fully offline.
 // Keep this list in sync whenever you add new pages/scripts/icons.
@@ -43,6 +43,12 @@ const APP_SHELL_FILES = [
   "./js/modules/calculator.js",
   "./js/modules/bmi.js",
   "./js/modules/tip.js",
+  "./js/modules/timezone.js",
+  "./js/modules/qr.js",
+  "./js/modules/scientific.js",
+  "./js/modules/tax.js",
+  "./js/modules/percentage.js",
+  "./js/modules/age.js",
   "./js/api/currency.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",

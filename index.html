@@ -1,77 +1,746 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Converter</title>
-    <link rel="stylesheet" href="styles.css">
-  </head>
-  <body>
-    <main class="app-shell">
-      <section class="converter-panel" aria-labelledby="app-title">
-        <div class="panel-heading">
-          <div>
-            <p class="eyebrow">Quick tools</p>
-            <h1 id="app-title">Converter</h1>
+<head>
+  <meta charset="UTF-8" />
+
+  <!-- Mobile-first viewport: prevents zooming issues, fits phone screens -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+
+  <title>UnitKit — Converter & Tools</title>
+  <meta name="description" content="A fast, offline-ready unit and currency converter PWA." />
+
+  <!-- Tells the browser both color schemes are supported, so native
+       form controls (checkboxes, scrollbars) theme correctly and
+       there's no white flash behind the page before CSS loads. -->
+  <meta name="color-scheme" content="light dark" />
+
+  <!-- ===== PWA essentials ===== -->
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#6C5CE7" />
+
+  <!-- iOS-specific PWA meta tags (Android reads manifest.json automatically) -->
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="UnitKit" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/png" href="icons/icon-192.png" />
+
+  <!-- Opens the connection to the currency API early (DNS + TLS handshake)
+       so the first currency lookup resolves faster once requested. -->
+  <link rel="preconnect" href="https://open.er-api.com" />
+
+  <!-- Stylesheet -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Applies the saved/preferred theme BEFORE first paint, so there's
+       no flash of the wrong theme (e.g. a light flash for a dark-mode
+       user). Deliberately tiny, inline, and blocking — it must run
+       before CSS renders. Keep the storage key in sync with
+       THEME_STORAGE_KEY in js/config/constants.js. -->
+  <script>
+    (function () {
+      try {
+        var saved = localStorage.getItem("unitkit-theme");
+        if (saved !== "light") {
+          document.documentElement.classList.add("dark-theme");
+        }
+      } catch (err) {
+        // localStorage unavailable (e.g. private browsing) — fall back
+        // silently to the default light theme; app.js will retry.
+      }
+    })();
+  </script>
+</head>
+<body>
+
+  <!-- Lets keyboard users jump straight past the header/nav to the
+       page content — the very first focusable element in the app. -->
+  <a class="skip-link" href="#main-content">Skip to content</a>
+
+  <!-- Shown only if JavaScript is disabled/blocked; the app is
+       entirely JS-driven (conversions, navigation), so it can't
+       function without it. -->
+  <noscript>
+    <p class="noscript-banner">
+      UnitKit needs JavaScript enabled to work. Please enable it in your browser settings.
+    </p>
+  </noscript>
+
+  <!-- =======================================================
+       APP HEADER
+       Shows current page title + dark/light mode toggle
+  ======================================================== -->
+  <header class="app-header">
+    <h1 id="page-title">UnitKit</h1>
+    <button id="theme-toggle-btn" class="icon-btn" aria-label="Toggle dark mode">
+      <!-- Icon swapped via JS between sun/moon; decorative, label
+           already conveyed by the button's aria-label above. -->
+      <span id="theme-icon" aria-hidden="true">🌙</span>
+    </button>
+  </header>
+
+  <!-- =======================================================
+       MAIN APP CONTENT
+       Each <section class="page"> is one "screen".
+       app.js shows/hides these based on bottom nav clicks.
+  ======================================================== -->
+  <main class="app-main" id="main-content" tabindex="-1">
+
+    <!-- ---------- HOME PAGE ---------- -->
+    <section id="page-home" class="page active">
+      <p class="page-subtitle">What do you want to convert today?</p>
+
+      <div class="card-grid">
+        <!-- Each data-target points to the page id to open -->
+        <button class="tool-card" data-target="page-distance">
+          <span class="tool-icon" aria-hidden="true">📏</span>
+          <span class="tool-name">Distance</span>
+          <span class="tool-desc">Kilometer ⇄ Mile</span>
+        </button>
+
+        <button class="tool-card" data-target="page-temperature">
+          <span class="tool-icon" aria-hidden="true">🌡️</span>
+          <span class="tool-name">Temperature</span>
+          <span class="tool-desc">Celsius ⇄ Fahrenheit</span>
+        </button>
+
+        <button class="tool-card" data-target="page-currency">
+          <span class="tool-icon" aria-hidden="true">💱</span>
+          <span class="tool-name">Currency</span>
+          <span class="tool-desc">CHF, NPR, INR, USD...</span>
+        </button>
+
+        <!-- Weight, Calculator, and BMI are now live (previously "coming soon"). -->
+        <button class="tool-card" data-target="page-weight">
+          <span class="tool-icon" aria-hidden="true">⚖️</span>
+          <span class="tool-name">Weight</span>
+          <span class="tool-desc">Kilogram ⇄ Pound</span>
+        </button>
+
+        <button class="tool-card" data-target="page-calculator">
+          <span class="tool-icon" aria-hidden="true">🧮</span>
+          <span class="tool-name">Calculator</span>
+          <span class="tool-desc">Basic arithmetic</span>
+        </button>
+
+        <button class="tool-card" data-target="page-bmi">
+          <span class="tool-icon" aria-hidden="true">🧍</span>
+          <span class="tool-name">BMI</span>
+          <span class="tool-desc">Body Mass Index</span>
+        </button>
+
+        <!-- Length, Area, Volume, Speed, and Tip Calculator: newest additions. -->
+        <button class="tool-card" data-target="page-length">
+          <span class="tool-icon" aria-hidden="true">📐</span>
+          <span class="tool-name">Length</span>
+          <span class="tool-desc">Meter ⇄ Feet</span>
+        </button>
+
+        <button class="tool-card" data-target="page-area">
+          <span class="tool-icon" aria-hidden="true">🔲</span>
+          <span class="tool-name">Area</span>
+          <span class="tool-desc">m² ⇄ ft²</span>
+        </button>
+
+        <button class="tool-card" data-target="page-volume">
+          <span class="tool-icon" aria-hidden="true">🧴</span>
+          <span class="tool-name">Volume</span>
+          <span class="tool-desc">Liter ⇄ Gallon</span>
+        </button>
+
+        <button class="tool-card" data-target="page-speed">
+          <span class="tool-icon" aria-hidden="true">🚀</span>
+          <span class="tool-name">Speed</span>
+          <span class="tool-desc">km/h ⇄ mph</span>
+        </button>
+
+        <button class="tool-card" data-target="page-tip">
+          <span class="tool-icon" aria-hidden="true">🧾</span>
+          <span class="tool-name">Tip Calculator</span>
+          <span class="tool-desc">Bill, tip & split</span>
+        </button>
+
+        <button class="tool-card" data-target="page-timezone">
+          <span class="tool-icon" aria-hidden="true">🌍</span>
+          <span class="tool-name">Time Zone</span>
+          <span class="tool-desc">World time converter</span>
+        </button>
+
+        <button class="tool-card" data-target="page-qr">
+          <span class="tool-icon" aria-hidden="true">▦</span>
+          <span class="tool-name">QR Code</span>
+          <span class="tool-desc">Generate & scan</span>
+        </button>
+
+        <button class="tool-card" data-target="page-scientific">
+          <span class="tool-icon" aria-hidden="true">ƒx</span>
+          <span class="tool-name">Scientific</span>
+          <span class="tool-desc">Functions & constants</span>
+        </button>
+
+        <button class="tool-card" data-target="page-tax">
+          <span class="tool-icon" aria-hidden="true">%</span>
+          <span class="tool-name">GST/VAT</span>
+          <span class="tool-desc">Add or extract tax</span>
+        </button>
+
+        <button class="tool-card" data-target="page-percentage">
+          <span class="tool-icon" aria-hidden="true">％</span>
+          <span class="tool-name">Percentage</span>
+          <span class="tool-desc">Of, increase, decrease</span>
+        </button>
+
+        <button class="tool-card" data-target="page-age">
+          <span class="tool-icon" aria-hidden="true">🎂</span>
+          <span class="tool-name">Age</span>
+          <span class="tool-desc">Years, months, days</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ---------- DISTANCE CONVERTER PAGE ---------- -->
+    <section id="page-distance" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">📏</span> Distance Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="km-input">Kilometers</label>
+          <input type="number" id="km-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="distance-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="mile-input">Miles</label>
+          <input type="number" id="mile-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- TEMPERATURE CONVERTER PAGE ---------- -->
+    <section id="page-temperature" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🌡️</span> Temperature Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="celsius-input">Celsius (°C)</label>
+          <input type="number" id="celsius-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="temp-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="fahrenheit-input">Fahrenheit (°F)</label>
+          <input type="number" id="fahrenheit-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- CURRENCY CONVERTER PAGE ---------- -->
+    <section id="page-currency" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">💱</span> Currency Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="currency-amount-input">Amount (CHF)</label>
+          <input type="number" id="currency-amount-input" inputmode="decimal" placeholder="1" />
+        </div>
+
+        <div class="input-group">
+          <label for="currency-target-select">Convert to</label>
+          <select id="currency-target-select">
+            <option value="NPR">NPR — Nepalese Rupee</option>
+            <option value="INR">INR — Indian Rupee</option>
+            <option value="USD">USD — US Dollar</option>
+            <option value="JPY">JPY — Japanese Yen</option>
+            <option value="CNY">CNY — Chinese Yuan</option>
+          </select>
+        </div>
+
+        <!-- aria-live="polite" announces the converted amount to screen
+             readers whenever it changes, without interrupting them mid-sentence. -->
+        <div class="result-box" aria-live="polite">
+          <span id="currency-result">—</span>
+        </div>
+      </div>
+
+      <!-- Status row: last updated time + refresh + error messages.
+           role="status" + aria-live="polite" makes rate updates and
+           connection errors audible to screen reader users automatically. -->
+      <div class="status-row">
+        <span id="currency-status" role="status" aria-live="polite">Loading rates…</span>
+        <button id="currency-refresh-btn" class="text-btn">Refresh</button>
+      </div>
+    </section>
+
+    <!-- ---------- WEIGHT CONVERTER PAGE ---------- -->
+    <section id="page-weight" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">⚖️</span> Weight Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="kg-input">Kilograms</label>
+          <input type="number" id="kg-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="weight-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="lbs-input">Pounds</label>
+          <input type="number" id="lbs-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- LENGTH CONVERTER PAGE ---------- -->
+    <section id="page-length" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">📐</span> Length Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="meter-input">Meters</label>
+          <input type="number" id="meter-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="length-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="feet-input">Feet</label>
+          <input type="number" id="feet-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- AREA CONVERTER PAGE ---------- -->
+    <section id="page-area" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🔲</span> Area Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="sqm-input">Square Meters (m²)</label>
+          <input type="number" id="sqm-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="area-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="sqft-input">Square Feet (ft²)</label>
+          <input type="number" id="sqft-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- VOLUME CONVERTER PAGE ---------- -->
+    <section id="page-volume" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🧴</span> Volume Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="liter-input">Liters</label>
+          <input type="number" id="liter-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="volume-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="gallon-input">Gallons (US)</label>
+          <input type="number" id="gallon-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- SPEED CONVERTER PAGE ---------- -->
+    <section id="page-speed" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🚀</span> Speed Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="kmh-input">Kilometers/hour</label>
+          <input type="number" id="kmh-input" inputmode="decimal" placeholder="0" />
+        </div>
+
+        <button id="speed-swap-btn" class="swap-btn" aria-label="Clear and swap units">⇅</button>
+
+        <div class="input-group">
+          <label for="mph-input">Miles/hour</label>
+          <input type="number" id="mph-input" inputmode="decimal" placeholder="0" />
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- CALCULATOR PAGE ---------- -->
+    <section id="page-calculator" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🧮</span> Calculator</h2>
+
+      <div class="calculator-card">
+        <!-- role="status" + aria-live announces the running total to screen
+             readers as buttons are pressed, the same way sighted users see it. -->
+        <div class="calculator-display" id="calculator-display" role="status" aria-live="polite">0</div>
+
+        <div class="calculator-grid">
+          <button class="calc-btn calc-btn--function" data-calc-action="clear">C</button>
+          <button class="calc-btn calc-btn--function" data-calc-action="toggle-sign">±</button>
+          <button class="calc-btn calc-btn--function" data-calc-action="percent">%</button>
+          <button class="calc-btn calc-btn--operator" data-calc-operator="÷">÷</button>
+
+          <button class="calc-btn" data-calc-digit="7">7</button>
+          <button class="calc-btn" data-calc-digit="8">8</button>
+          <button class="calc-btn" data-calc-digit="9">9</button>
+          <button class="calc-btn calc-btn--operator" data-calc-operator="×">×</button>
+
+          <button class="calc-btn" data-calc-digit="4">4</button>
+          <button class="calc-btn" data-calc-digit="5">5</button>
+          <button class="calc-btn" data-calc-digit="6">6</button>
+          <button class="calc-btn calc-btn--operator" data-calc-operator="-">−</button>
+
+          <button class="calc-btn" data-calc-digit="1">1</button>
+          <button class="calc-btn" data-calc-digit="2">2</button>
+          <button class="calc-btn" data-calc-digit="3">3</button>
+          <button class="calc-btn calc-btn--operator" data-calc-operator="+">+</button>
+
+          <button class="calc-btn calc-btn--zero" data-calc-digit="0">0</button>
+          <button class="calc-btn" data-calc-action="decimal">.</button>
+          <button class="calc-btn calc-btn--equals" data-calc-action="equals" aria-label="Equals">=</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- BMI CALCULATOR PAGE ---------- -->
+    <section id="page-bmi" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🧍</span> BMI Calculator</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="bmi-weight-input">Weight (kg)</label>
+          <input type="number" id="bmi-weight-input" inputmode="decimal" placeholder="70" min="0" />
+        </div>
+
+        <div class="input-group">
+          <label for="bmi-height-input">Height (cm)</label>
+          <input type="number" id="bmi-height-input" inputmode="decimal" placeholder="175" min="0" />
+        </div>
+
+        <!-- aria-live announces the BMI value + category together whenever
+             either input changes. -->
+        <div class="result-box result-box--bmi" aria-live="polite">
+          <span id="bmi-result">—</span>
+          <span id="bmi-category" class="bmi-category"></span>
+        </div>
+      </div>
+
+      <p class="bmi-disclaimer">
+        BMI is a general screening tool and doesn't account for muscle mass,
+        bone density, or body composition. Consult a healthcare professional
+        for personalized advice.
+      </p>
+    </section>
+
+    <!-- ---------- TIP CALCULATOR PAGE ---------- -->
+    <section id="page-tip" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🧾</span> Tip Calculator</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="tip-bill-input">Bill Amount</label>
+          <input type="number" id="tip-bill-input" inputmode="decimal" placeholder="0" min="0" />
+        </div>
+
+        <div class="input-group">
+          <span id="tip-percent-label">Tip Percentage</span>
+          <!-- role="group" + aria-labelledby ties this button set to its
+               label for screen readers, the same way a fieldset/legend would. -->
+          <div class="tip-preset-grid" role="group" aria-labelledby="tip-percent-label">
+            <button type="button" class="tip-preset-btn" data-tip-percent="10">10%</button>
+            <button type="button" class="tip-preset-btn" data-tip-percent="15">15%</button>
+            <button type="button" class="tip-preset-btn tip-preset-btn--active" data-tip-percent="20" aria-pressed="true">20%</button>
+            <button type="button" class="tip-preset-btn" data-tip-percent="25">25%</button>
           </div>
-          <button class="icon-button" id="swapButton" type="button" aria-label="Swap units" title="Swap units">
-            <span aria-hidden="true">Swap</span>
-          </button>
         </div>
 
-        <div class="tabs" role="tablist" aria-label="Converter categories">
-          <button class="tab active" type="button" data-category="length">Length</button>
-          <button class="tab" type="button" data-category="weight">Weight</button>
-          <button class="tab" type="button" data-category="temperature">Temp</button>
-          <button class="tab" type="button" data-category="volume">Volume</button>
-          <button class="tab" type="button" data-category="area">Area</button>
-          <button class="tab" type="button" data-tool="timezone">Time Zone</button>
-          <button class="tab" type="button" data-tool="qr">QR Code</button>
-          <button class="tab" type="button" data-tool="scientific">Scientific</button>
-          <button class="tab" type="button" data-tool="tax">GST/VAT</button>
-          <button class="tab" type="button" data-tool="percentage">Percent</button>
-          <button class="tab" type="button" data-tool="age">Age</button>
+        <div class="input-group">
+          <label for="tip-custom-input">Custom % (optional)</label>
+          <input type="number" id="tip-custom-input" inputmode="decimal" placeholder="e.g. 18" min="0" />
         </div>
 
-        <form class="converter-grid" id="converterForm">
-          <label class="field">
-            <span>From</span>
-            <input id="fromValue" type="number" inputmode="decimal" value="1" step="any">
-          </label>
-
-          <label class="field">
-            <span>Unit</span>
-            <select id="fromUnit"></select>
-          </label>
-
-          <label class="field">
-            <span>To</span>
-            <input id="toValue" type="number" inputmode="decimal" step="any">
-          </label>
-
-          <label class="field">
-            <span>Unit</span>
-            <select id="toUnit"></select>
-          </label>
-        </form>
-
-        <section class="tool-panel" id="toolPanel" hidden></section>
-
-        <div class="result-strip" aria-live="polite">
-          <span id="resultText">1 meter = 3.28084 feet</span>
-          <button id="copyButton" type="button">Copy</button>
+        <div class="input-group">
+          <label for="tip-people-input">Split Between (people)</label>
+          <input type="number" id="tip-people-input" inputmode="numeric" placeholder="1" min="1" value="1" />
         </div>
-      </section>
 
-      <aside class="history-panel" aria-labelledby="history-title">
-        <div class="panel-heading compact">
-          <h2 id="history-title">Recent</h2>
-          <button id="clearButton" type="button">Clear</button>
+        <!-- aria-live announces the recalculated totals whenever any input changes. -->
+        <div class="result-box result-box--tip" aria-live="polite">
+          <div class="tip-result-row">
+            <span>Tip Amount</span>
+            <span id="tip-amount-result">—</span>
+          </div>
+          <div class="tip-result-row">
+            <span>Total</span>
+            <span id="tip-total-result">—</span>
+          </div>
+          <div class="tip-result-row tip-result-row--highlight">
+            <span>Per Person</span>
+            <span id="tip-per-person-result">—</span>
+          </div>
         </div>
-        <ol id="historyList" class="history-list"></ol>
-      </aside>
-    </main>
+      </div>
+    </section>
 
-    <script src="script.js"></script>
-  </body>
+    <!-- ---------- TIME ZONE CONVERTER PAGE ---------- -->
+    <section id="page-timezone" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🌍</span> Time Zone Converter</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="timezone-datetime-input">Date and time</label>
+          <input type="datetime-local" id="timezone-datetime-input" />
+        </div>
+
+        <div class="input-group">
+          <label for="timezone-from-select">From time zone</label>
+          <select id="timezone-from-select">
+            <option value="UTC">UTC</option>
+            <option value="Asia/Kolkata">Asia/Kolkata</option>
+            <option value="Europe/Zurich">Europe/Zurich</option>
+            <option value="America/New_York">America/New_York</option>
+            <option value="America/Los_Angeles">America/Los_Angeles</option>
+            <option value="Asia/Dubai">Asia/Dubai</option>
+            <option value="Asia/Tokyo">Asia/Tokyo</option>
+            <option value="Australia/Sydney">Australia/Sydney</option>
+          </select>
+        </div>
+
+        <div class="input-group">
+          <label for="timezone-to-select">To time zone</label>
+          <select id="timezone-to-select">
+            <option value="UTC">UTC</option>
+            <option value="Asia/Kolkata">Asia/Kolkata</option>
+            <option value="Europe/Zurich">Europe/Zurich</option>
+            <option value="America/New_York">America/New_York</option>
+            <option value="America/Los_Angeles">America/Los_Angeles</option>
+            <option value="Asia/Dubai">Asia/Dubai</option>
+            <option value="Asia/Tokyo">Asia/Tokyo</option>
+            <option value="Australia/Sydney">Australia/Sydney</option>
+          </select>
+        </div>
+
+        <div class="result-box" aria-live="polite">
+          <span id="timezone-result">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- QR CODE PAGE ---------- -->
+    <section id="page-qr" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">▦</span> QR Code Generator/Scanner</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="qr-text-input">Text or URL</label>
+          <input type="text" id="qr-text-input" placeholder="https://example.com" />
+        </div>
+
+        <div class="result-box" aria-live="polite">
+          <img id="qr-code-image" alt="" width="220" height="220" />
+        </div>
+
+        <div class="input-group">
+          <button type="button" id="qr-scan-btn" class="text-btn">Start scanner</button>
+          <video id="qr-video" muted playsinline></video>
+        </div>
+
+        <div class="result-box" aria-live="polite">
+          <span id="qr-scan-result">Scanner ready</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- SCIENTIFIC CALCULATOR PAGE ---------- -->
+    <section id="page-scientific" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">ƒx</span> Scientific Calculator</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="scientific-expression-input">Expression</label>
+          <input type="text" id="scientific-expression-input" placeholder="sin(pi / 2) + sqrt(144)" />
+        </div>
+
+        <div class="result-box" aria-live="polite">
+          <span id="scientific-result">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- GST / VAT CALCULATOR PAGE ---------- -->
+    <section id="page-tax" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">%</span> GST/VAT Calculator</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="tax-amount-input">Amount</label>
+          <input type="number" id="tax-amount-input" inputmode="decimal" placeholder="1000" min="0" />
+        </div>
+
+        <div class="input-group">
+          <label for="tax-rate-input">Tax rate (%)</label>
+          <input type="number" id="tax-rate-input" inputmode="decimal" placeholder="18" min="0" />
+        </div>
+
+        <div class="input-group">
+          <label for="tax-mode-select">Mode</label>
+          <select id="tax-mode-select">
+            <option value="exclusive">Add tax</option>
+            <option value="inclusive">Tax included</option>
+          </select>
+        </div>
+
+        <div class="result-box result-box--tip" aria-live="polite">
+          <div class="tip-result-row">
+            <span>Net</span>
+            <span id="tax-net-result">—</span>
+          </div>
+          <div class="tip-result-row">
+            <span>Tax</span>
+            <span id="tax-value-result">—</span>
+          </div>
+          <div class="tip-result-row tip-result-row--highlight">
+            <span>Total</span>
+            <span id="tax-total-result">—</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- PERCENTAGE CALCULATOR PAGE ---------- -->
+    <section id="page-percentage" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">％</span> Percentage Calculator</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="percentage-base-input">Base value</label>
+          <input type="number" id="percentage-base-input" inputmode="decimal" placeholder="250" />
+        </div>
+
+        <div class="input-group">
+          <label for="percentage-value-input">Percentage</label>
+          <input type="number" id="percentage-value-input" inputmode="decimal" placeholder="12" />
+        </div>
+
+        <div class="input-group">
+          <label for="percentage-mode-select">Mode</label>
+          <select id="percentage-mode-select">
+            <option value="of">Percent of</option>
+            <option value="increase">Increase by</option>
+            <option value="decrease">Decrease by</option>
+          </select>
+        </div>
+
+        <div class="result-box" aria-live="polite">
+          <span id="percentage-result">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- AGE CALCULATOR PAGE ---------- -->
+    <section id="page-age" class="page">
+      <button class="back-btn" data-back>← Back</button>
+      <h2 class="section-title"><span aria-hidden="true">🎂</span> Age Calculator</h2>
+
+      <div class="converter-card">
+        <div class="input-group">
+          <label for="age-birth-input">Birth date</label>
+          <input type="date" id="age-birth-input" />
+        </div>
+
+        <div class="input-group">
+          <label for="age-compare-input">Compare date</label>
+          <input type="date" id="age-compare-input" />
+        </div>
+
+        <div class="result-box" aria-live="polite">
+          <span id="age-result">—</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- SETTINGS PAGE ---------- -->
+    <section id="page-settings" class="page">
+      <h2 class="section-title"><span aria-hidden="true">⚙️</span> Settings</h2>
+
+      <div class="settings-list">
+        <div class="settings-row">
+          <span>Dark Mode</span>
+          <label class="switch">
+            <input type="checkbox" id="dark-mode-switch" />
+            <span class="switch-slider"></span>
+          </label>
+        </div>
+
+        <div class="settings-row">
+          <span>Clear cached currency rates</span>
+          <button id="clear-cache-btn" class="text-btn">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------- ABOUT PAGE ---------- -->
+    <section id="page-about" class="page">
+      <h2 class="section-title"><span aria-hidden="true">ℹ️</span> About UnitKit</h2>
+      <div class="about-card">
+        <p>UnitKit is a fast, offline-first converter app built with plain HTML, CSS
+          and JavaScript — no frameworks, no backend.</p>
+        <p>Currency rates are provided by the
+          <a href="https://www.exchangerate-api.com" target="_blank" rel="noopener">ExchangeRate-API</a>.</p>
+        <p class="version-tag">Version 1.0.0</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- =======================================================
+       BOTTOM NAVIGATION BAR
+       Fixed to bottom, thumb-friendly on mobile.
+  ======================================================== -->
+  <nav class="bottom-nav" aria-label="Primary">
+    <button class="nav-btn active" data-target="page-home" aria-current="page">
+      <span class="nav-icon" aria-hidden="true">🏠</span>
+      <span class="nav-label">Home</span>
+    </button>
+    <button class="nav-btn" data-target="page-currency">
+      <span class="nav-icon" aria-hidden="true">💱</span>
+      <span class="nav-label">Currency</span>
+    </button>
+    <button class="nav-btn" data-target="page-settings">
+      <span class="nav-icon" aria-hidden="true">⚙️</span>
+      <span class="nav-label">Settings</span>
+    </button>
+    <button class="nav-btn" data-target="page-about">
+      <span class="nav-icon" aria-hidden="true">ℹ️</span>
+      <span class="nav-label">About</span>
+    </button>
+  </nav>
+
+  <!-- =======================================================
+       SCRIPTS
+       type="module" lets us use import/export between files.
+  ======================================================== -->
+  <script type="module" src="js/app.js"></script>
+</body>
 </html>

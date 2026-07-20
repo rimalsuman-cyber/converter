@@ -45,6 +45,12 @@ export const PAGE_TITLES = {
   "page-volume": "Volume",
   "page-speed": "Speed",
   "page-tip": "Tip Calculator",
+  "page-timezone": "Time Zone",
+  "page-qr": "QR Code",
+  "page-scientific": "Scientific Calculator",
+  "page-tax": "GST/VAT Calculator",
+  "page-percentage": "Percentage Calculator",
+  "page-age": "Age Calculator",
   "page-settings": "Settings",
   "page-about": "About",
 };

@@ -25,8 +25,11 @@
   --color-border: #E5E7EB;
   --color-success: #10B981;
   --color-error: #EF4444;
-  --color-select-hover: #7DD3FC;
+  --color-select-hover: #BAE6FD;
   --color-select-hover-text: #082F49;
+  --shadow-select-aurora: 0 0 0 1px rgba(186, 230, 253, 0.95),
+    0 0 22px rgba(56, 189, 248, 0.55),
+    0 0 42px rgba(14, 165, 233, 0.35);
 
   /* Shadows */
   --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.06);
@@ -50,8 +53,11 @@ html.dark-theme {
   --color-text: #F5F6FA;
   --color-text-muted: #9CA3AF;
   --color-border: #2E2E3E;
-  --color-select-hover: #7DD3FC;
+  --color-select-hover: #BAE6FD;
   --color-select-hover-text: #082F49;
+  --shadow-select-aurora: 0 0 0 1px rgba(186, 230, 253, 0.95),
+    0 0 24px rgba(56, 189, 248, 0.62),
+    0 0 48px rgba(14, 165, 233, 0.4);
 
   --shadow-card: 0 2px 10px rgba(0, 0, 0, 0.4);
   --shadow-nav: 0 -2px 10px rgba(0, 0, 0, 0.4);
@@ -396,13 +402,19 @@ a {
 }
 
 .input-group select:hover,
+.input-group select:active,
 .currency-select-row:hover,
+.currency-select-row:active,
+.currency-select-row:focus-within,
 .currency-select-row:hover select {
   background-color: var(--color-select-hover);
   color: var(--color-select-hover-text);
+  box-shadow: var(--shadow-select-aurora);
 }
 
 .input-group select option:hover,
+.input-group select option:focus,
+.input-group select option:active,
 .input-group select option:checked {
   background-color: var(--color-select-hover);
   color: var(--color-select-hover-text);
@@ -413,6 +425,7 @@ a {
   border-color: var(--color-select-hover);
   background-color: var(--color-select-hover);
   color: var(--color-select-hover-text);
+  box-shadow: var(--shadow-select-aurora);
 }
 
 .currency-select-row {
@@ -430,6 +443,7 @@ a {
   border-color: var(--color-select-hover);
   background-color: var(--color-select-hover);
   color: var(--color-select-hover-text);
+  box-shadow: var(--shadow-select-aurora);
 }
 
 .currency-flag {

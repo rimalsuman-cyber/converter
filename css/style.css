@@ -382,7 +382,13 @@ a {
   font-size: 1.15rem;
   font-weight: 600;
   outline: none;
+  color-scheme: dark;
   transition: border-color 0.2s ease;
+}
+
+.input-group select option {
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 .input-group input:focus,
@@ -418,7 +424,8 @@ a {
 .currency-select-row select {
   border: 0;
   border-radius: 0;
-  background-color: transparent;
+  background-color: var(--color-bg);
+  color: var(--color-text);
 }
 
 .currency-select-row select:focus {

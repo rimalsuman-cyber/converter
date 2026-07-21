@@ -106,6 +106,14 @@ function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
 
   window.addEventListener("load", () => {
+    let refreshing = false;
+
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
     navigator.serviceWorker
       .register("service-worker.js")
       .then((reg) => console.log("[UnitKit] Service worker registered:", reg.scope))
@@ -208,6 +216,108 @@ function setupNavigation() {
   // Any element with data-back returns to the Home page
   $$("[data-back]").forEach((el) => {
     el.addEventListener("click", () => navigateTo(DEFAULT_PAGE_ID));
+  });
+}
+
+function setFieldValue(id, value, eventType = "input") {
+  const field = document.getElementById(id);
+  if (!field) return;
+
+  field.value = value;
+  field.dispatchEvent(new Event(eventType, { bubbles: true }));
+}
+
+function clickElement(selector) {
+  document.querySelector(selector)?.click();
+}
+
+function resetActivePage() {
+  const activePage = document.querySelector(".page.active");
+  if (!activePage) return;
+
+  switch (activePage.id) {
+    case "page-distance":
+      setFieldValue("km-input", "");
+      break;
+    case "page-temperature":
+      setFieldValue("celsius-input", "");
+      break;
+    case "page-currency":
+      setFieldValue("currency-source-select", "CHF", "change");
+      setFieldValue("currency-target-select", "NPR", "change");
+      setFieldValue("currency-amount-input", "1");
+      break;
+    case "page-weight":
+      setFieldValue("kg-input", "");
+      break;
+    case "page-length":
+      setFieldValue("meter-input", "");
+      break;
+    case "page-area":
+      setFieldValue("sqm-input", "");
+      break;
+    case "page-volume":
+      setFieldValue("liter-input", "");
+      break;
+    case "page-speed":
+      setFieldValue("kmh-input", "");
+      break;
+    case "page-calculator":
+      clickElement('[data-calculator-mode="standard"]');
+      clickElement('[data-calc-action="clear"]');
+      setFieldValue("calculator-scientific-expression-input", "sin(pi / 2) + sqrt(144)");
+      break;
+    case "page-bmi":
+      setFieldValue("bmi-weight-input", "");
+      setFieldValue("bmi-height-input", "");
+      break;
+    case "page-tip":
+      setFieldValue("tip-bill-input", "");
+      setFieldValue("tip-custom-input", "");
+      setFieldValue("tip-people-input", "1");
+      clickElement('[data-tip-percent="20"]');
+      break;
+    case "page-timezone":
+      setFieldValue("timezone-datetime-input", getLocalDateTimeValue());
+      setFieldValue("timezone-from-select", "Europe/Zurich", "change");
+      setFieldValue("timezone-to-select", "Asia/Kathmandu", "change");
+      break;
+    case "page-qr":
+      setFieldValue("qr-text-input", "https://rimalsuman-cyber.github.io/converter/");
+      document.getElementById("qr-scan-result").textContent = "Scanner ready";
+      break;
+    case "page-tax":
+      setFieldValue("tax-amount-input", "1000");
+      setFieldValue("tax-rate-input", "18");
+      setFieldValue("tax-mode-select", "exclusive", "change");
+      break;
+    case "page-percentage":
+      setFieldValue("percentage-base-input", "250");
+      setFieldValue("percentage-value-input", "12");
+      setFieldValue("percentage-mode-select", "of", "change");
+      break;
+    case "page-age":
+      setFieldValue("age-birth-input", "2000-01-01");
+      setFieldValue("age-compare-input", new Date().toISOString().slice(0, 10));
+      break;
+    default:
+      break;
+  }
+}
+
+function setupResetButtons() {
+  $$(".page").forEach((page) => {
+    if (["page-home", "page-settings", "page-about"].includes(page.id)) return;
+
+    const card = page.querySelector(".converter-card, .calculator-card");
+    if (!card || card.querySelector(".reset-tool-btn")) return;
+
+    const resetButton = document.createElement("button");
+    resetButton.type = "button";
+    resetButton.className = "reset-tool-btn";
+    resetButton.textContent = "Reset";
+    resetButton.addEventListener("click", resetActivePage);
+    card.append(resetButton);
   });
 }
 
@@ -1000,6 +1110,7 @@ function initApp() {
   disablePageZoomGestures();
   setupTheme();
   setupNavigation();
+  setupResetButtons();
   setupDistanceConverter();
   setupTemperatureConverter();
   setupWeightConverter();

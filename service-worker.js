@@ -19,7 +19,7 @@
      new version instead of a stale cached copy.
 ========================================================= */
 
-const CACHE_NAME = "unitkit-v7";
+const CACHE_NAME = "unitkit-v9";
 
 // Every file needed to run the app fully offline.
 // Keep this list in sync whenever you add new pages/scripts/icons.
@@ -106,6 +106,21 @@ self.addEventListener("fetch", (event) => {
 
   // Only handle GET requests for our own app files (same-origin)
   if (event.request.method !== "GET" || requestUrl.origin !== self.location.origin) {
+    return;
+  }
+
+  if (event.request.mode === "navigate") {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          const responseToCache = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => {
+            cache.put("./index.html", responseToCache);
+          });
+          return networkResponse;
+        })
+        .catch(() => caches.match("./index.html"))
+    );
     return;
   }
 

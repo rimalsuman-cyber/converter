@@ -517,10 +517,46 @@ function setupCalculator() {
   const calculatorCard = displayEl?.closest(".calculator-card");
   if (!displayEl || !calculatorCard) return;
 
+  const modeButtons = $$(".calculator-mode-btn");
+  const standardPanel = document.getElementById("calculator-standard-panel");
+  const scientificPanel = document.getElementById("calculator-scientific-panel");
+  const scientificInput = document.getElementById("calculator-scientific-expression-input");
+  const scientificResult = document.getElementById("calculator-scientific-result");
   const engine = createCalculatorEngine();
+  let activeCalculatorMode = "standard";
 
   function render() {
     displayEl.textContent = engine.getDisplay();
+  }
+
+  function setCalculatorMode(mode) {
+    activeCalculatorMode = mode;
+    standardPanel.hidden = mode !== "standard";
+    scientificPanel.hidden = mode !== "scientific";
+
+    modeButtons.forEach((button) => {
+      const isActive = button.dataset.calculatorMode === mode;
+      button.classList.toggle("calculator-mode-btn--active", isActive);
+      button.setAttribute("aria-pressed", String(isActive));
+    });
+
+    if (mode === "scientific") {
+      scientificInput.focus();
+    }
+  }
+
+  function updateInlineScientificResult() {
+    const expression = scientificInput.value.trim();
+    if (!expression) {
+      scientificResult.textContent = "—";
+      return;
+    }
+
+    try {
+      scientificResult.textContent = roundTo(calculateScientificExpression(expression), 8);
+    } catch (err) {
+      scientificResult.textContent = "Invalid expression";
+    }
   }
 
   // Single delegated listener on the button grid, instead of one
@@ -530,7 +566,22 @@ function setupCalculator() {
     const button = event.target.closest("button");
     if (!button) return;
 
-    const { calcDigit, calcOperator, calcAction } = button.dataset;
+    const { calcDigit, calcOperator, calcAction, calculatorMode, scientificInsert } = button.dataset;
+
+    if (calculatorMode) {
+      setCalculatorMode(calculatorMode);
+      return;
+    }
+
+    if (scientificInsert !== undefined) {
+      const start = scientificInput.selectionStart ?? scientificInput.value.length;
+      const end = scientificInput.selectionEnd ?? scientificInput.value.length;
+      scientificInput.value = `${scientificInput.value.slice(0, start)}${scientificInsert}${scientificInput.value.slice(end)}`;
+      scientificInput.focus();
+      scientificInput.setSelectionRange(start + scientificInsert.length, start + scientificInsert.length);
+      updateInlineScientificResult();
+      return;
+    }
 
     if (calcDigit !== undefined) {
       engine.inputDigit(calcDigit);
@@ -555,7 +606,7 @@ function setupCalculator() {
   // is open — lets desktop users type instead of clicking.
   document.addEventListener("keydown", (event) => {
     const isCalculatorOpen = document.getElementById("page-calculator")?.classList.contains("active");
-    if (!isCalculatorOpen) return;
+    if (!isCalculatorOpen || activeCalculatorMode !== "standard") return;
 
     if (event.key >= "0" && event.key <= "9") {
       engine.inputDigit(event.key);
@@ -581,6 +632,12 @@ function setupCalculator() {
     render();
   });
 
+  scientificInput.value = "sin(pi / 2) + sqrt(144)";
+  scientificInput.addEventListener("input", updateInlineScientificResult);
+  modeButtons.forEach((button) => {
+    button.addEventListener("click", () => setCalculatorMode(button.dataset.calculatorMode));
+  });
+  updateInlineScientificResult();
   render();
 }
 
@@ -797,33 +854,7 @@ function setupQrTool() {
   updateQrCode();
 }
 
-/* ---------- 17. SCIENTIFIC CALCULATOR ---------- */
-
-function setupScientificCalculator() {
-  const expressionInput = document.getElementById("scientific-expression-input");
-  const resultEl = document.getElementById("scientific-result");
-  if (!expressionInput || !resultEl) return;
-
-  function updateResult() {
-    const expression = expressionInput.value.trim();
-    if (!expression) {
-      resultEl.textContent = "—";
-      return;
-    }
-
-    try {
-      resultEl.textContent = roundTo(calculateScientificExpression(expression), 8);
-    } catch (err) {
-      resultEl.textContent = "Invalid expression";
-    }
-  }
-
-  expressionInput.value = "sin(pi / 2) + sqrt(144)";
-  expressionInput.addEventListener("input", updateResult);
-  updateResult();
-}
-
-/* ---------- 18. GST / VAT CALCULATOR ---------- */
+/* ---------- 17. GST / VAT CALCULATOR ---------- */
 
 function setupTaxCalculator() {
   const amountInput = document.getElementById("tax-amount-input");
@@ -859,7 +890,7 @@ function setupTaxCalculator() {
   updateResult();
 }
 
-/* ---------- 19. PERCENTAGE CALCULATOR ---------- */
+/* ---------- 18. PERCENTAGE CALCULATOR ---------- */
 
 function setupPercentageCalculator() {
   const baseInput = document.getElementById("percentage-base-input");
@@ -895,7 +926,7 @@ function setupPercentageCalculator() {
   updateResult();
 }
 
-/* ---------- 20. AGE CALCULATOR ---------- */
+/* ---------- 19. AGE CALCULATOR ---------- */
 
 function setupAgeCalculator() {
   const birthInput = document.getElementById("age-birth-input");
@@ -933,7 +964,7 @@ function setupAgeCalculator() {
   updateResult();
 }
 
-/* ---------- 21. SETTINGS PAGE EXTRAS ---------- */
+/* ---------- 20. SETTINGS PAGE EXTRAS ---------- */
 
 function setupSettingsPage() {
   const clearCacheBtn = document.getElementById("clear-cache-btn");
@@ -946,7 +977,7 @@ function setupSettingsPage() {
   });
 }
 
-/* ---------- 22. GLOBAL ERROR SAFETY NET ---------- */
+/* ---------- 21. GLOBAL ERROR SAFETY NET ---------- */
 /* Catches anything unexpected (a bug we didn't anticipate) so it's
    always visible in the console for debugging, rather than failing
    silently. This doesn't change app behavior — it's a diagnostic
@@ -982,7 +1013,6 @@ function initApp() {
   setupTipCalculator();
   setupTimeZoneConverter();
   setupQrTool();
-  setupScientificCalculator();
   setupTaxCalculator();
   setupPercentageCalculator();
   setupAgeCalculator();

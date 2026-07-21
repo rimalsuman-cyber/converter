@@ -73,7 +73,7 @@
        Shows current page title + dark/light mode toggle
   ======================================================== -->
   <header class="app-header">
-    <h1 id="page-title">UTILITY: CONVERTER,</h1>
+    <h1 id="page-title">Utility: Converter</h1>
   </header>
 
   <!-- =======================================================
@@ -167,12 +167,6 @@
           <span class="tool-icon" aria-hidden="true">▦</span>
           <span class="tool-name">QR Code</span>
           <span class="tool-desc">Generate & scan</span>
-        </button>
-
-        <button class="tool-card" data-target="page-scientific">
-          <span class="tool-icon" aria-hidden="true">ƒx</span>
-          <span class="tool-name">Scientific</span>
-          <span class="tool-desc">Functions & constants</span>
         </button>
 
         <button class="tool-card" data-target="page-tax">
@@ -384,34 +378,63 @@
       <h2 class="section-title"><span aria-hidden="true">🧮</span> Calculator</h2>
 
       <div class="calculator-card">
+        <div class="calculator-mode-toggle" role="tablist" aria-label="Calculator mode">
+          <button type="button" class="calculator-mode-btn calculator-mode-btn--active" data-calculator-mode="standard" aria-pressed="true">Standard</button>
+          <button type="button" class="calculator-mode-btn" data-calculator-mode="scientific" aria-pressed="false">Scientific</button>
+        </div>
+
         <!-- role="status" + aria-live announces the running total to screen
              readers as buttons are pressed, the same way sighted users see it. -->
-        <div class="calculator-display" id="calculator-display" role="status" aria-live="polite">0</div>
+        <div class="calculator-panel calculator-panel--active" id="calculator-standard-panel">
+          <div class="calculator-display" id="calculator-display" role="status" aria-live="polite">0</div>
 
-        <div class="calculator-grid">
-          <button class="calc-btn calc-btn--function" data-calc-action="clear">C</button>
-          <button class="calc-btn calc-btn--function" data-calc-action="toggle-sign">±</button>
-          <button class="calc-btn calc-btn--function" data-calc-action="percent">%</button>
-          <button class="calc-btn calc-btn--operator" data-calc-operator="÷">÷</button>
+          <div class="calculator-grid">
+            <button class="calc-btn calc-btn--function" data-calc-action="clear">C</button>
+            <button class="calc-btn calc-btn--function" data-calc-action="toggle-sign">±</button>
+            <button class="calc-btn calc-btn--function" data-calc-action="percent">%</button>
+            <button class="calc-btn calc-btn--operator" data-calc-operator="÷">÷</button>
 
-          <button class="calc-btn" data-calc-digit="7">7</button>
-          <button class="calc-btn" data-calc-digit="8">8</button>
-          <button class="calc-btn" data-calc-digit="9">9</button>
-          <button class="calc-btn calc-btn--operator" data-calc-operator="×">×</button>
+            <button class="calc-btn" data-calc-digit="7">7</button>
+            <button class="calc-btn" data-calc-digit="8">8</button>
+            <button class="calc-btn" data-calc-digit="9">9</button>
+            <button class="calc-btn calc-btn--operator" data-calc-operator="×">×</button>
 
-          <button class="calc-btn" data-calc-digit="4">4</button>
-          <button class="calc-btn" data-calc-digit="5">5</button>
-          <button class="calc-btn" data-calc-digit="6">6</button>
-          <button class="calc-btn calc-btn--operator" data-calc-operator="-">−</button>
+            <button class="calc-btn" data-calc-digit="4">4</button>
+            <button class="calc-btn" data-calc-digit="5">5</button>
+            <button class="calc-btn" data-calc-digit="6">6</button>
+            <button class="calc-btn calc-btn--operator" data-calc-operator="-">−</button>
 
-          <button class="calc-btn" data-calc-digit="1">1</button>
-          <button class="calc-btn" data-calc-digit="2">2</button>
-          <button class="calc-btn" data-calc-digit="3">3</button>
-          <button class="calc-btn calc-btn--operator" data-calc-operator="+">+</button>
+            <button class="calc-btn" data-calc-digit="1">1</button>
+            <button class="calc-btn" data-calc-digit="2">2</button>
+            <button class="calc-btn" data-calc-digit="3">3</button>
+            <button class="calc-btn calc-btn--operator" data-calc-operator="+">+</button>
 
-          <button class="calc-btn calc-btn--zero" data-calc-digit="0">0</button>
-          <button class="calc-btn" data-calc-action="decimal">.</button>
-          <button class="calc-btn calc-btn--equals" data-calc-action="equals" aria-label="Equals">=</button>
+            <button class="calc-btn calc-btn--zero" data-calc-digit="0">0</button>
+            <button class="calc-btn" data-calc-action="decimal">.</button>
+            <button class="calc-btn calc-btn--equals" data-calc-action="equals" aria-label="Equals">=</button>
+          </div>
+        </div>
+
+        <div class="calculator-panel" id="calculator-scientific-panel" hidden>
+          <div class="input-group">
+            <label for="calculator-scientific-expression-input">Scientific expression</label>
+            <input type="text" id="calculator-scientific-expression-input" placeholder="sin(pi / 2) + sqrt(144)" />
+          </div>
+
+          <div class="calculator-scientific-grid">
+            <button type="button" class="calc-btn" data-scientific-insert="sin(">sin</button>
+            <button type="button" class="calc-btn" data-scientific-insert="cos(">cos</button>
+            <button type="button" class="calc-btn" data-scientific-insert="tan(">tan</button>
+            <button type="button" class="calc-btn" data-scientific-insert="sqrt(">√</button>
+            <button type="button" class="calc-btn" data-scientific-insert="log(">log</button>
+            <button type="button" class="calc-btn" data-scientific-insert="ln(">ln</button>
+            <button type="button" class="calc-btn" data-scientific-insert="pi">π</button>
+            <button type="button" class="calc-btn" data-scientific-insert="^">xʸ</button>
+          </div>
+
+          <div class="result-box" aria-live="polite">
+            <span id="calculator-scientific-result">—</span>
+          </div>
         </div>
       </div>
     </section>
@@ -651,23 +674,6 @@
 
         <div class="result-box" aria-live="polite">
           <span id="qr-scan-result">Scanner ready</span>
-        </div>
-      </div>
-    </section>
-
-    <!-- ---------- SCIENTIFIC CALCULATOR PAGE ---------- -->
-    <section id="page-scientific" class="page">
-      <button class="back-btn" data-back>← Back</button>
-      <h2 class="section-title"><span aria-hidden="true">ƒx</span> Scientific Calculator</h2>
-
-      <div class="converter-card">
-        <div class="input-group">
-          <label for="scientific-expression-input">Expression</label>
-          <input type="text" id="scientific-expression-input" placeholder="sin(pi / 2) + sqrt(144)" />
-        </div>
-
-        <div class="result-box" aria-live="polite">
-          <span id="scientific-result">—</span>
         </div>
       </div>
     </section>

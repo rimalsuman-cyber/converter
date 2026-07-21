@@ -180,8 +180,12 @@ a {
 }
 
 .app-header h1 {
-  font-size: 1.15rem;
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(1rem, 4.6vw, 1.15rem);
   font-weight: 700;
+  line-height: 1.15;
 }
 
 .icon-btn {
@@ -598,6 +602,43 @@ a {
   gap: 16px;
 }
 
+.calculator-mode-toggle {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 6px;
+}
+
+.calculator-mode-btn {
+  border-radius: 10px;
+  padding: 10px 12px;
+  color: var(--color-text-muted);
+  font-weight: 700;
+  transition: background-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+}
+
+.calculator-mode-btn:active {
+  transform: scale(0.96);
+}
+
+.calculator-mode-btn--active {
+  background-color: var(--color-primary);
+  color: #fff;
+}
+
+.calculator-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.calculator-panel[hidden] {
+  display: none;
+}
+
 .calculator-display {
   background-color: var(--color-bg);
   border-radius: var(--radius-md);
@@ -617,6 +658,12 @@ a {
 }
 
 .calculator-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.calculator-scientific-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 10px;

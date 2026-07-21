@@ -19,7 +19,7 @@
      new version instead of a stale cached copy.
 ========================================================= */
 
-const CACHE_NAME = "unitkit-v9";
+const CACHE_NAME = "unitkit-v10";
 
 // Every file needed to run the app fully offline.
 // Keep this list in sync whenever you add new pages/scripts/icons.

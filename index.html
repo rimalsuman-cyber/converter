@@ -655,7 +655,7 @@
     <!-- ---------- QR CODE PAGE ---------- -->
     <section id="page-qr" class="page">
       <button class="back-btn" data-back>← Back</button>
-      <h2 class="section-title"><span aria-hidden="true">▦</span> QR Code Generator/Scanner</h2>
+      <h2 class="section-title"><span aria-hidden="true">▦</span> QR / Barcode / Document Scanner</h2>
 
       <div class="converter-card">
         <div class="input-group">
@@ -668,12 +668,65 @@
         </div>
 
         <div class="input-group">
-          <button type="button" id="qr-scan-btn" class="text-btn">Start scanner</button>
-          <video id="qr-video" muted playsinline></video>
+          <span id="scanner-mode-label">Scanner mode</span>
+          <div class="scanner-mode-grid" role="group" aria-labelledby="scanner-mode-label">
+            <button type="button" class="scanner-mode-btn scanner-mode-btn--active" data-scanner-mode="document">Document or receipt</button>
+            <button type="button" class="scanner-mode-btn" data-scanner-mode="qr">QR code</button>
+            <button type="button" class="scanner-mode-btn" data-scanner-mode="barcode">Barcode</button>
+          </div>
         </div>
 
-        <div class="result-box" aria-live="polite">
-          <span id="qr-scan-result">Scanner ready</span>
+        <div class="scanner-shell">
+          <div class="scanner-toolbar">
+            <button type="button" id="qr-scan-btn" class="scanner-action-btn">Start Scanner</button>
+            <button type="button" id="scanner-close-btn" class="scanner-action-btn" hidden>Close</button>
+            <button type="button" id="scanner-torch-btn" class="scanner-action-btn" hidden>Flashlight</button>
+          </div>
+
+          <video id="qr-video" class="scanner-video" muted playsinline></video>
+          <canvas id="scanner-preview-canvas" class="scanner-preview-canvas" hidden></canvas>
+
+          <div id="document-corner-editor" class="document-corner-editor" hidden>
+            <button type="button" class="doc-corner" data-corner="tl" aria-label="Top left corner"></button>
+            <button type="button" class="doc-corner" data-corner="tr" aria-label="Top right corner"></button>
+            <button type="button" class="doc-corner" data-corner="br" aria-label="Bottom right corner"></button>
+            <button type="button" class="doc-corner" data-corner="bl" aria-label="Bottom left corner"></button>
+          </div>
+
+          <div class="scanner-toolbar">
+            <button type="button" id="document-capture-btn" class="scanner-action-btn" hidden>Capture Page</button>
+            <button type="button" id="document-retake-btn" class="scanner-action-btn" hidden>Retake</button>
+            <button type="button" id="document-use-btn" class="scanner-action-btn" hidden>Use Scan</button>
+          </div>
+        </div>
+
+        <div class="result-box result-box--tip scanner-result-box" aria-live="polite">
+          <div class="tip-result-row">
+            <span>Status</span>
+            <span id="scanner-status">Scanner ready</span>
+          </div>
+          <div class="tip-result-row">
+            <span>Result</span>
+            <span id="qr-scan-result">—</span>
+          </div>
+          <div class="tip-result-row">
+            <span>Pages</span>
+            <span id="document-page-count">0</span>
+          </div>
+        </div>
+
+        <div class="scanner-toolbar scanner-output-actions">
+          <button type="button" id="scanner-open-link-btn" class="scanner-action-btn" hidden>Open Link</button>
+          <button type="button" id="scanner-copy-btn" class="scanner-action-btn" hidden>Copy</button>
+          <button type="button" id="scanner-save-btn" class="scanner-action-btn" hidden>Save</button>
+          <button type="button" id="scanner-again-btn" class="scanner-action-btn" hidden>Scan Again</button>
+          <button type="button" id="scanner-settings-btn" class="scanner-action-btn" hidden>Open Settings</button>
+        </div>
+
+        <div class="scanner-toolbar scanner-export-actions">
+          <button type="button" id="document-save-pdf-btn" class="scanner-action-btn" hidden>Save PDF</button>
+          <button type="button" id="document-save-jpg-btn" class="scanner-action-btn" hidden>Save JPG</button>
+          <button type="button" id="document-save-png-btn" class="scanner-action-btn" hidden>Save PNG</button>
         </div>
       </div>
     </section>

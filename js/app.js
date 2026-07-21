@@ -895,17 +895,58 @@ function setupQrTool() {
   const textInput = document.getElementById("qr-text-input");
   const imageEl = document.getElementById("qr-code-image");
   const scanBtn = document.getElementById("qr-scan-btn");
+  const closeBtn = document.getElementById("scanner-close-btn");
+  const torchBtn = document.getElementById("scanner-torch-btn");
+  const captureBtn = document.getElementById("document-capture-btn");
+  const retakeBtn = document.getElementById("document-retake-btn");
+  const useBtn = document.getElementById("document-use-btn");
   const videoEl = document.getElementById("qr-video");
+  const previewCanvas = document.getElementById("scanner-preview-canvas");
+  const cornerEditor = document.getElementById("document-corner-editor");
+  const statusEl = document.getElementById("scanner-status");
   const resultEl = document.getElementById("qr-scan-result");
-  if (!textInput || !imageEl || !scanBtn || !videoEl || !resultEl) return;
+  const pageCountEl = document.getElementById("document-page-count");
+  const openLinkBtn = document.getElementById("scanner-open-link-btn");
+  const copyBtn = document.getElementById("scanner-copy-btn");
+  const saveBtn = document.getElementById("scanner-save-btn");
+  const againBtn = document.getElementById("scanner-again-btn");
+  const settingsBtn = document.getElementById("scanner-settings-btn");
+  const savePdfBtn = document.getElementById("document-save-pdf-btn");
+  const saveJpgBtn = document.getElementById("document-save-jpg-btn");
+  const savePngBtn = document.getElementById("document-save-png-btn");
+  const modeButtons = $$(".scanner-mode-btn");
+  const cornerButtons = $$(".doc-corner");
+  if (!textInput || !imageEl || !scanBtn || !closeBtn || !torchBtn || !captureBtn || !retakeBtn || !useBtn || !videoEl || !previewCanvas || !cornerEditor || !statusEl || !resultEl || !pageCountEl) return;
 
-  let qrStream = null;
+  let scannerStream = null;
+  let scannerMode = "document";
+  let detector = null;
+  let scanning = false;
+  let torchOn = false;
+  let lastScannedValue = "";
+  let capturedCanvas = null;
+  let documentPages = [];
+  let corners = {
+    tl: { x: 0.08, y: 0.08 },
+    tr: { x: 0.92, y: 0.08 },
+    br: { x: 0.92, y: 0.92 },
+    bl: { x: 0.08, y: 0.92 },
+  };
 
   function stopScanner() {
-    if (!qrStream) return;
-    qrStream.getTracks().forEach((track) => track.stop());
-    qrStream = null;
-    scanBtn.textContent = "Start scanner";
+    scanning = false;
+    if (scannerStream) {
+      scannerStream.getTracks().forEach((track) => track.stop());
+      scannerStream = null;
+    }
+    videoEl.pause();
+    videoEl.removeAttribute("srcObject");
+    videoEl.srcObject = null;
+    scanBtn.textContent = "Start Scanner";
+    closeBtn.hidden = true;
+    torchBtn.hidden = true;
+    captureBtn.hidden = true;
+    torchOn = false;
   }
 
   function updateQrCode() {
@@ -920,47 +961,357 @@ function setupQrTool() {
     imageEl.alt = `QR code for ${text}`;
   }
 
-  async function startScanner() {
-    if (qrStream) {
-      stopScanner();
+  function setStatus(message) {
+    statusEl.textContent = message;
+  }
+
+  function setMode(mode) {
+    scannerMode = mode;
+    modeButtons.forEach((button) => {
+      const active = button.dataset.scannerMode === mode;
+      button.classList.toggle("scanner-mode-btn--active", active);
+    });
+    setStatus("Scanner ready");
+  }
+
+  function isUrl(value) {
+    try {
+      const url = new URL(value);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch (err) {
+      return false;
+    }
+  }
+
+  function setCodeActions(value) {
+    lastScannedValue = value;
+    openLinkBtn.hidden = !isUrl(value);
+    copyBtn.hidden = false;
+    saveBtn.hidden = false;
+    againBtn.hidden = false;
+  }
+
+  function clearCodeActions() {
+    openLinkBtn.hidden = true;
+    copyBtn.hidden = true;
+    saveBtn.hidden = true;
+    againBtn.hidden = true;
+    settingsBtn.hidden = true;
+  }
+
+  function downloadBlob(blob, filename) {
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = filename;
+    link.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function canvasToBlob(canvas, type = "image/png", quality = 0.92) {
+    return new Promise((resolve) => canvas.toBlob(resolve, type, quality));
+  }
+
+  function drawImprovedCrop(sourceCanvas, targetCanvas, crop) {
+    const ctx = targetCanvas.getContext("2d");
+    targetCanvas.width = Math.max(1, Math.round(crop.width));
+    targetCanvas.height = Math.max(1, Math.round(crop.height));
+    ctx.filter = "brightness(1.08) contrast(1.18) saturate(0.96)";
+    ctx.drawImage(sourceCanvas, crop.x, crop.y, crop.width, crop.height, 0, 0, targetCanvas.width, targetCanvas.height);
+    ctx.filter = "none";
+  }
+
+  function updateCornerButtons() {
+    const rect = previewCanvas.getBoundingClientRect();
+    cornerButtons.forEach((button) => {
+      const corner = corners[button.dataset.corner];
+      button.style.left = `${corner.x * rect.width - 12}px`;
+      button.style.top = `${corner.y * rect.height - 12}px`;
+    });
+  }
+
+  function detectDocumentCorners(canvas) {
+    const ctx = canvas.getContext("2d");
+    const { width, height } = canvas;
+    const sample = ctx.getImageData(0, 0, width, height).data;
+    let minX = width * 0.08;
+    let minY = height * 0.08;
+    let maxX = width * 0.92;
+    let maxY = height * 0.92;
+    let found = false;
+
+    for (let y = 0; y < height; y += 6) {
+      for (let x = 0; x < width; x += 6) {
+        const index = (y * width + x) * 4;
+        const brightness = (sample[index] + sample[index + 1] + sample[index + 2]) / 3;
+        if (brightness > 95) {
+          minX = found ? Math.min(minX, x) : x;
+          minY = found ? Math.min(minY, y) : y;
+          maxX = found ? Math.max(maxX, x) : x;
+          maxY = found ? Math.max(maxY, y) : y;
+          found = true;
+        }
+      }
+    }
+
+    corners = {
+      tl: { x: minX / width, y: minY / height },
+      tr: { x: maxX / width, y: minY / height },
+      br: { x: maxX / width, y: maxY / height },
+      bl: { x: minX / width, y: maxY / height },
+    };
+  }
+
+  function getCornerCrop(canvas) {
+    const xs = Object.values(corners).map((corner) => corner.x * canvas.width);
+    const ys = Object.values(corners).map((corner) => corner.y * canvas.height);
+    const x = Math.max(0, Math.min(...xs));
+    const y = Math.max(0, Math.min(...ys));
+    const width = Math.min(canvas.width - x, Math.max(...xs) - x);
+    const height = Math.min(canvas.height - y, Math.max(...ys) - y);
+    return { x, y, width, height };
+  }
+
+  function captureVideoFrame() {
+    const canvas = document.createElement("canvas");
+    canvas.width = videoEl.videoWidth || 1280;
+    canvas.height = videoEl.videoHeight || 720;
+    canvas.getContext("2d").drawImage(videoEl, 0, 0, canvas.width, canvas.height);
+    return canvas;
+  }
+
+  function showDocumentPreview(sourceCanvas) {
+    capturedCanvas = sourceCanvas;
+    previewCanvas.width = sourceCanvas.width;
+    previewCanvas.height = sourceCanvas.height;
+    previewCanvas.getContext("2d").drawImage(sourceCanvas, 0, 0);
+    detectDocumentCorners(sourceCanvas);
+    videoEl.hidden = true;
+    previewCanvas.hidden = false;
+    cornerEditor.hidden = false;
+    retakeBtn.hidden = false;
+    useBtn.hidden = false;
+    captureBtn.hidden = true;
+    setStatus("Scan completed");
+    requestAnimationFrame(updateCornerButtons);
+  }
+
+  async function ensureCamera() {
+    if (!navigator.mediaDevices?.getUserMedia) {
+      throw new Error("Camera scanning is not supported in this browser.");
+    }
+
+    setStatus("Preparing scanner...");
+    scannerStream = await navigator.mediaDevices.getUserMedia({
+      video: {
+        facingMode: { ideal: "environment" },
+        width: { ideal: 1920 },
+        height: { ideal: 1080 },
+      },
+      audio: false,
+    });
+    videoEl.srcObject = scannerStream;
+    await videoEl.play();
+    closeBtn.hidden = false;
+    torchBtn.hidden = false;
+    setStatus("Scanner ready");
+  }
+
+  async function toggleTorch() {
+    const track = scannerStream?.getVideoTracks()[0];
+    const capabilities = track?.getCapabilities?.();
+    if (!track || !capabilities?.torch) {
+      setStatus("Flashlight is not available on this device.");
       return;
     }
 
-    if (!canScanQrCodes()) {
-      resultEl.textContent = "QR scanning is not supported in this browser.";
+    torchOn = !torchOn;
+    await track.applyConstraints({ advanced: [{ torch: torchOn }] });
+    torchBtn.textContent = torchOn ? "Flashlight Off" : "Flashlight";
+  }
+
+  async function scanCodes() {
+    if (!("BarcodeDetector" in window)) {
+      setStatus("Scanning is not supported here. Try Chrome on Android, or use document capture as a web fallback.");
+      return;
+    }
+
+    const formats = scannerMode === "qr"
+      ? ["qr_code"]
+      : ["aztec", "code_128", "code_39", "code_93", "codabar", "data_matrix", "ean_13", "ean_8", "itf", "pdf417", "qr_code", "upc_a", "upc_e"];
+    detector = new BarcodeDetector({ formats });
+    scanning = true;
+    setStatus("Scanning...");
+
+    const scan = async () => {
+      if (!scanning || !scannerStream) return;
+      try {
+        const codes = await detector.detect(videoEl);
+        if (codes.length) {
+          const value = codes[0].rawValue;
+          resultEl.textContent = value;
+          setStatus("Scan completed");
+          setCodeActions(value);
+          stopScanner();
+          return;
+        }
+      } catch (err) {
+        setStatus("Scanning failed. Please try again with better light and a steady camera.");
+      }
+      requestAnimationFrame(scan);
+    };
+    scan();
+  }
+
+  async function startScanner() {
+    if (scannerStream) {
+      stopScanner();
       return;
     }
 
     try {
-      qrStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
-      videoEl.srcObject = qrStream;
-      await videoEl.play();
-      scanBtn.textContent = "Stop scanner";
-
-      const detector = new BarcodeDetector({ formats: ["qr_code"] });
-      const scan = async () => {
-        if (!qrStream) return;
-
-        const codes = await detector.detect(videoEl);
-        if (codes.length) {
-          resultEl.textContent = codes[0].rawValue;
-          stopScanner();
-          return;
-        }
-
-        requestAnimationFrame(scan);
-      };
-
-      scan();
+      clearCodeActions();
+      resultEl.textContent = "—";
+      previewCanvas.hidden = true;
+      cornerEditor.hidden = true;
+      videoEl.hidden = false;
+      await ensureCamera();
+      scanBtn.textContent = "Stop Scanner";
+      if (scannerMode === "document") {
+        captureBtn.hidden = false;
+        setStatus("Scanner ready");
+      } else {
+        scanCodes();
+      }
     } catch (err) {
-      resultEl.textContent = "Camera access was not available.";
+      const denied = err.name === "NotAllowedError" || err.name === "PermissionDeniedError";
+      setStatus(denied ? "Camera permission was denied. Allow camera access in your browser settings and try again." : err.message || "Camera access was not available.");
+      settingsBtn.hidden = false;
       stopScanner();
     }
   }
 
+  function retakeDocument() {
+    previewCanvas.hidden = true;
+    cornerEditor.hidden = true;
+    retakeBtn.hidden = true;
+    useBtn.hidden = true;
+    videoEl.hidden = false;
+    captureBtn.hidden = !scannerStream;
+    setStatus(scannerStream ? "Scanner ready" : "Scanner ready");
+  }
+
+  function useDocumentScan() {
+    if (!capturedCanvas) return;
+    const pageCanvas = document.createElement("canvas");
+    drawImprovedCrop(capturedCanvas, pageCanvas, getCornerCrop(capturedCanvas));
+    documentPages.push(pageCanvas);
+    pageCountEl.textContent = String(documentPages.length);
+    resultEl.textContent = `${documentPages.length} page${documentPages.length === 1 ? "" : "s"} ready`;
+    savePdfBtn.hidden = false;
+    saveJpgBtn.hidden = false;
+    savePngBtn.hidden = false;
+    retakeDocument();
+  }
+
+  async function saveDocumentImage(type) {
+    const canvas = documentPages[documentPages.length - 1];
+    if (!canvas) return;
+    const blob = await canvasToBlob(canvas, type === "jpg" ? "image/jpeg" : "image/png");
+    downloadBlob(blob, `scan.${type === "jpg" ? "jpg" : "png"}`);
+  }
+
+  async function savePdf() {
+    if (!documentPages.length) return;
+    const encoder = new TextEncoder();
+    const chunks = [];
+    const offsets = [];
+    let byteLength = 0;
+    const add = (part) => {
+      const chunk = typeof part === "string" ? encoder.encode(part) : part;
+      chunks.push(chunk);
+      byteLength += chunk.byteLength;
+    };
+    const addObject = (id, bodyParts) => {
+      offsets[id] = byteLength;
+      add(`${id} 0 obj\n`);
+      bodyParts.forEach(add);
+      add("\nendobj\n");
+    };
+
+    const imageBuffers = await Promise.all(documentPages.map((canvas) => canvasToBlob(canvas, "image/jpeg", 0.86).then((blob) => blob.arrayBuffer())));
+    const pageIds = [];
+    let objectId = 3;
+
+    add("%PDF-1.3\n");
+    const imageObjects = [];
+    const contentObjects = [];
+    documentPages.forEach((canvas, index) => {
+      const imageId = objectId++;
+      const contentId = objectId++;
+      const pageId = objectId++;
+      imageObjects.push(imageId);
+      contentObjects.push(contentId);
+      pageIds.push(pageId);
+
+      const imageBytes = new Uint8Array(imageBuffers[index]);
+      addObject(imageId, [
+        `<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imageBytes.byteLength} >>\nstream\n`,
+        imageBytes,
+        "\nendstream",
+      ]);
+
+      const content = `q\n${canvas.width} 0 0 ${canvas.height} 0 0 cm\n/Im${index} Do\nQ`;
+      addObject(contentId, [`<< /Length ${content.length} >>\nstream\n${content}\nendstream`]);
+      addObject(pageId, [`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${canvas.width} ${canvas.height}] /Resources << /XObject << /Im${index} ${imageId} 0 R >> >> /Contents ${contentId} 0 R >>`]);
+    });
+
+    addObject(1, ["<< /Type /Catalog /Pages 2 0 R >>"]);
+    addObject(2, [`<< /Type /Pages /Kids [${pageIds.map((id) => `${id} 0 R`).join(" ")}] /Count ${pageIds.length} >>`]);
+
+    const xrefOffset = byteLength;
+    add(`xref\n0 ${objectId}\n0000000000 65535 f \n`);
+    for (let id = 1; id < objectId; id += 1) {
+      add(`${String(offsets[id]).padStart(10, "0")} 00000 n \n`);
+    }
+    add(`trailer\n<< /Size ${objectId} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+    downloadBlob(new Blob(chunks, { type: "application/pdf" }), "scan.pdf");
+  }
+
   textInput.value = "https://rimalsuman-cyber.github.io/converter/";
   textInput.addEventListener("input", updateQrCode);
+  modeButtons.forEach((button) => button.addEventListener("click", () => setMode(button.dataset.scannerMode)));
   scanBtn.addEventListener("click", startScanner);
+  closeBtn.addEventListener("click", stopScanner);
+  torchBtn.addEventListener("click", toggleTorch);
+  captureBtn.addEventListener("click", () => showDocumentPreview(captureVideoFrame()));
+  retakeBtn.addEventListener("click", retakeDocument);
+  useBtn.addEventListener("click", useDocumentScan);
+  againBtn.addEventListener("click", startScanner);
+  openLinkBtn.addEventListener("click", () => window.open(lastScannedValue, "_blank", "noopener"));
+  copyBtn.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(lastScannedValue);
+    setStatus("Scan copied");
+  });
+  saveBtn.addEventListener("click", () => downloadBlob(new Blob([lastScannedValue], { type: "text/plain" }), "scan-result.txt"));
+  settingsBtn.addEventListener("click", () => setStatus("Open your browser or phone settings, allow camera access for this site, then return and tap Start Scanner."));
+  savePdfBtn.addEventListener("click", savePdf);
+  saveJpgBtn.addEventListener("click", () => saveDocumentImage("jpg"));
+  savePngBtn.addEventListener("click", () => saveDocumentImage("png"));
+  cornerButtons.forEach((button) => {
+    button.addEventListener("pointerdown", (event) => {
+      button.setPointerCapture(event.pointerId);
+    });
+    button.addEventListener("pointermove", (event) => {
+      if (!button.hasPointerCapture(event.pointerId)) return;
+      const rect = previewCanvas.getBoundingClientRect();
+      corners[button.dataset.corner] = {
+        x: Math.min(1, Math.max(0, (event.clientX - rect.left) / rect.width)),
+        y: Math.min(1, Math.max(0, (event.clientY - rect.top) / rect.height)),
+      };
+      updateCornerButtons();
+    });
+  });
   updateQrCode();
 }
 

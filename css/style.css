@@ -549,6 +549,84 @@ a {
   transform: scale(0.97);
 }
 
+/* --- Scanner --- */
+
+.scanner-mode-grid,
+.scanner-toolbar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 8px;
+}
+
+.scanner-mode-btn,
+.scanner-action-btn {
+  min-height: 42px;
+  border-radius: var(--radius-md);
+  background-color: var(--color-bg);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-weight: 750;
+  padding: 10px 12px;
+  transition: transform 0.1s ease, background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.scanner-mode-btn--active,
+.scanner-action-btn:hover,
+.scanner-action-btn:focus-visible,
+.scanner-mode-btn:hover,
+.scanner-mode-btn:focus-visible {
+  background-color: var(--color-select-hover);
+  border-color: var(--color-select-hover);
+  color: var(--color-select-hover-text);
+  box-shadow: var(--shadow-select-aurora);
+}
+
+.scanner-mode-btn:active,
+.scanner-action-btn:active {
+  transform: scale(0.97);
+}
+
+.scanner-shell {
+  position: relative;
+  display: grid;
+  gap: 12px;
+}
+
+.scanner-video,
+.scanner-preview-canvas {
+  width: 100%;
+  min-height: 220px;
+  aspect-ratio: 4 / 3;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: #05050a;
+  object-fit: cover;
+}
+
+.document-corner-editor {
+  position: absolute;
+  inset: 58px 0 58px;
+  pointer-events: none;
+}
+
+.doc-corner {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  background-color: var(--color-select-hover);
+  box-shadow: 0 0 20px rgba(125, 211, 252, 0.9);
+  pointer-events: auto;
+  touch-action: none;
+}
+
+.scanner-result-box span:last-child {
+  max-width: 58%;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
 /* --- Settings page --- */
 
 .settings-list {
